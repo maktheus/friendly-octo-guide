@@ -86,4 +86,40 @@ public class IdempotencyLedgerTests
         _ledger.Release(JobId);
         Assert.Equal(JobClaim.AlreadyDone, _ledger.TryClaim(JobId));
     }
+
+    [Fact]
+    public void Concluidos_alem_da_janela_sao_esquecidos_e_a_memoria_nao_cresce_sem_limite()
+    {
+        var ledger = new IdempotencyLedger(maxCompletedRetained: 2);
+        var first = Guid.NewGuid();
+        var second = Guid.NewGuid();
+        var third = Guid.NewGuid();
+
+        foreach (var id in (Guid[])[first, second, third])
+        {
+            ledger.TryClaim(id);
+            ledger.Complete(id);
+        }
+
+        Assert.Equal(JobClaim.AlreadyDone, ledger.TryClaim(second));  // dentro da janela
+        Assert.Equal(JobClaim.AlreadyDone, ledger.TryClaim(third));
+        Assert.Equal(JobClaim.Accepted, ledger.TryClaim(first));      // saiu da janela: reprocessável
+    }
+
+    [Fact]
+    public void Complete_repetido_nao_infla_a_janela()
+    {
+        var ledger = new IdempotencyLedger(maxCompletedRetained: 2);
+        var jobA = Guid.NewGuid();
+        var jobB = Guid.NewGuid();
+
+        ledger.TryClaim(jobA);
+        ledger.Complete(jobA);
+        ledger.Complete(jobA); // idempotente: não conta duas vezes na janela
+        ledger.TryClaim(jobB);
+        ledger.Complete(jobB);
+
+        Assert.Equal(JobClaim.AlreadyDone, ledger.TryClaim(jobA));
+        Assert.Equal(JobClaim.AlreadyDone, ledger.TryClaim(jobB));
+    }
 }
