@@ -11,6 +11,8 @@ public sealed partial class ScoringLoop(
     IConfiguration config,
     ILogger<ScoringLoop> log) : BackgroundService
 {
+    private const int MaxDetectors = 10_000;
+
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
     private readonly Dictionary<string, AnomalyDetector> _detectors = [];
 
@@ -49,9 +51,18 @@ public sealed partial class ScoringLoop(
                 continue;
             }
 
-            var detector = _detectors.TryGetValue(reading.SensorId, out var d)
-                ? d
-                : _detectors[reading.SensorId] = new AnomalyDetector();
+            if (!_detectors.TryGetValue(reading.SensorId, out var detector))
+            {
+                // sensor_id é entrada externa: um edge malcomportado (id único por mensagem)
+                // cresceria o dicionário até OOM. Melhor re-aquecer 30 amostras do que cair.
+                if (_detectors.Count >= MaxDetectors)
+                {
+                    LogDetectorReset(_detectors.Count);
+                    _detectors.Clear();
+                }
+
+                detector = _detectors[reading.SensorId] = new AnomalyDetector();
+            }
 
             var score = detector.Observe(reading.Value);
             activity?.SetTag("sensor.id", reading.SensorId);
@@ -82,4 +93,8 @@ public sealed partial class ScoringLoop(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Anomalia: {Sensor} = {Value} (z = {ZScore:F1})")]
     private partial void LogAnomaly(string sensor, double value, double zScore);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Teto de {Count} detectores atingido — baselines descartados; sensor_id malformado no edge?")]
+    private partial void LogDetectorReset(int count);
 }

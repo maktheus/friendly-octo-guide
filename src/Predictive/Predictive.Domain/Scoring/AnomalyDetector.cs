@@ -28,7 +28,11 @@ public sealed class AnomalyDetector(double alpha = 0.05, double zThreshold = 3.0
 
         var deviation = value - _mean;
         var stdDev = Math.Sqrt(_variance);
-        var z = stdDev > 0 ? deviation / stdDev : 0;
+        // Regime flatline (variância zero): qualquer desvio é quebra de regime — zerar o z
+        // aqui faria o salto mais óbvio passar sem alarme e ser absorvido pela média.
+        var z = stdDev > 0 ? deviation / stdDev
+            : deviation == 0 ? 0
+            : Math.Sign(deviation) * double.PositiveInfinity;
         var warmedUp = _samples > warmupSamples;
 
         // Anomalia NÃO contamina a linha de base: o normal não pode "aprender" o defeito.

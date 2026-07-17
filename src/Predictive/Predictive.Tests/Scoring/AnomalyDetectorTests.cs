@@ -44,6 +44,29 @@ public class AnomalyDetectorTests
     }
 
     [Fact]
+    public void Sensor_flatline_que_salta_e_anomalia_apos_warmup()
+    {
+        var detector = new AnomalyDetector(warmupSamples: 30);
+        for (var i = 0; i < 60; i++)
+            detector.Observe(100); // variância zero: linha parada ou setpoint fixo
+
+        var score = detector.Observe(140);
+        Assert.True(score.IsAnomaly); // desvio com variância zero é quebra de regime
+    }
+
+    [Fact]
+    public void Sensor_flatline_estavel_nao_gera_anomalia()
+    {
+        var detector = new AnomalyDetector(warmupSamples: 30);
+        AnomalyScore score = default!;
+        for (var i = 0; i < 60; i++)
+            score = detector.Observe(100);
+
+        Assert.False(score.IsAnomaly);
+        Assert.Equal(0, score.ZScore);
+    }
+
+    [Fact]
     public void Anomalia_nao_contamina_a_linha_de_base()
     {
         var detector = new AnomalyDetector(warmupSamples: 30);
