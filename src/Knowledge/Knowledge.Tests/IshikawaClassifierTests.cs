@@ -17,6 +17,15 @@ public class IshikawaClassifierTests
         Assert.Equal(esperada, IshikawaClassifier.Classify(sintoma));
     }
 
+    [Theory]
+    [InlineData("Erro de medição fora do padrão", IshikawaCategory.Medicao)] // regra é "medicao"
+    [InlineData("CALIBRAÇÃO vencida no AOI-2", IshikawaCategory.Medicao)]
+    [InlineData("Estêncil obstruído", IshikawaCategory.Maquina)] // regra é "estencil"
+    public void Acentos_nao_mudam_a_classificacao(string sintoma, IshikawaCategory esperada)
+    {
+        Assert.Equal(esperada, IshikawaClassifier.Classify(sintoma));
+    }
+
     [Fact]
     public void Sem_palavra_conhecida_e_indefinida()
     {

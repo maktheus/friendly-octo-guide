@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Knowledge.Domain.Ishikawa;
 
 /// <summary>
@@ -12,7 +14,6 @@ public static class IshikawaClassifier
     public static IReadOnlyList<(string Palavra, IshikawaCategory Categoria)> RegrasPadrao { get; } =
     [
         ("estencil", IshikawaCategory.Maquina),
-        ("estêncil", IshikawaCategory.Maquina),
         ("desgaste", IshikawaCategory.Maquina),
         ("squeegee", IshikawaCategory.Maquina),
         ("nozzle", IshikawaCategory.Maquina),
@@ -45,13 +46,44 @@ public static class IshikawaClassifier
         ArgumentNullException.ThrowIfNull(sintomaOuCodigo);
         ArgumentNullException.ThrowIfNull(regras);
 
-        var texto = sintomaOuCodigo.ToLowerInvariant();
+        var texto = Fold(sintomaOuCodigo);
         foreach (var (palavra, categoria) in regras)
         {
-            if (texto.Contains(palavra, StringComparison.Ordinal))
+            if (texto.Contains(Fold(palavra), StringComparison.Ordinal))
                 return categoria;
         }
 
         return IshikawaCategory.Indefinida;
+    }
+
+    /// <summary>
+    /// Minúsculas + remoção de diacríticos: "medição", "MEDIÇÃO" e "medicao" são a mesma
+    /// palavra. Sem isso, cada regra teria que listar todas as grafias acentuadas — e o
+    /// texto vindo da operação nunca é consistente nisso. Mapa explícito porque o repo
+    /// compila com InvariantGlobalization e ali string.Normalize() é no-op.
+    /// </summary>
+    private static string Fold(string s)
+    {
+        var sb = new StringBuilder(s.Length);
+        foreach (var raw in s)
+        {
+            var ch = raw switch
+            {
+                'á' or 'à' or 'â' or 'ã' or 'ä' or 'Á' or 'À' or 'Â' or 'Ã' or 'Ä' => 'a',
+                'é' or 'è' or 'ê' or 'ë' or 'É' or 'È' or 'Ê' or 'Ë' => 'e',
+                'í' or 'ì' or 'î' or 'ï' or 'Í' or 'Ì' or 'Î' or 'Ï' => 'i',
+                'ó' or 'ò' or 'ô' or 'õ' or 'ö' or 'Ó' or 'Ò' or 'Ô' or 'Õ' or 'Ö' => 'o',
+                'ú' or 'ù' or 'û' or 'ü' or 'Ú' or 'Ù' or 'Û' or 'Ü' => 'u',
+                'ç' or 'Ç' => 'c',
+                'ñ' or 'Ñ' => 'n',
+                >= (char)0x0300 and <= (char)0x036F => '\0', // marca combinante (texto decomposto): descarta
+                _ => char.ToLowerInvariant(raw),
+            };
+
+            if (ch != '\0')
+                sb.Append(ch);
+        }
+
+        return sb.ToString();
     }
 }
