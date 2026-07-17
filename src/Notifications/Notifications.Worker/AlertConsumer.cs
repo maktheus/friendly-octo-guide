@@ -1,11 +1,9 @@
-using System.Text.Json;
 using Confluent.Kafka;
+using Notifications.Domain.Alerts;
 using Notifications.Domain.Escalation;
 using Platform.ServiceDefaults;
 
 namespace Notifications.Worker;
-
-public sealed record AlertMessage(Guid Id, string Title, string Body, Severity Severity, DateTimeOffset RaisedAt);
 
 /// <summary>
 /// Consome linha.alertas.v1 e despacha pelo canal que a severidade manda.
@@ -40,7 +38,7 @@ public sealed partial class AlertConsumer(
             var result = consumer.Consume(stoppingToken);
             using var activity = instrumentation.Activity.StartActivity("notifications.dispatch");
 
-            var alert = JsonSerializer.Deserialize<AlertMessage>(result.Message.Value, JsonOpts);
+            var alert = AlertJson.TryParse(result.Message.Value);
             if (alert is null)
             {
                 LogMalformed(result.Message.Value.Length);
@@ -67,8 +65,6 @@ public sealed partial class AlertConsumer(
             consumer.Commit(result);
         }
     }
-
-    private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Alerta malformado descartado ({Bytes} bytes) — schema gate furou?")]
     private partial void LogMalformed(int bytes);

@@ -30,7 +30,16 @@ public sealed class AlertIngestService(SignalWindow window, IConfiguration confi
         while (!stoppingToken.IsCancellationRequested)
         {
             var result = consumer.Consume(stoppingToken);
-            var alert = JsonSerializer.Deserialize<AlertEnvelope>(result.Message.Value, JsonOpts);
+            AlertEnvelope? alert;
+            try
+            {
+                alert = JsonSerializer.Deserialize<AlertEnvelope>(result.Message.Value, JsonOpts);
+            }
+            catch (JsonException)
+            {
+                continue; // payload ruim não derruba a janela de correlação
+            }
+
             if (alert is null)
                 continue;
 
