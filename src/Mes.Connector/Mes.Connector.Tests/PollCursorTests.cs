@@ -53,4 +53,24 @@ public class PollCursorTests
         Assert.Empty(fresh);
         Assert.Equal("000000000000000007", next.LastCursor);
     }
+
+    [Fact]
+    public void Id_numerico_sem_zero_padding_nao_e_descartado_como_antigo()
+    {
+        // Ordinalmente "100" < "99" — o evento novo sumiria em silêncio.
+        var state = new MesPollState("99");
+        var (fresh, next) = PollCursor.SelectNew([Row("100")], state);
+
+        Assert.Single(fresh);
+        Assert.Equal("100", next.LastCursor);
+    }
+
+    [Theory]
+    [InlineData("99", "100", -1)]                                       // numérico: 99 < 100
+    [InlineData("0100", "100", 0)]                                      // zeros à esquerda não mudam o valor
+    [InlineData("2026-07-17T10:00:00Z", "2026-07-17T09:59:59Z", 1)]     // ISO continua ordinal
+    public void Comparacao_de_cursor_respeita_o_formato(string a, string b, int sinalEsperado)
+    {
+        Assert.Equal(sinalEsperado, Math.Sign(PollCursor.Compare(a, b)));
+    }
 }
