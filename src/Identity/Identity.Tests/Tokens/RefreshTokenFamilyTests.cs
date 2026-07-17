@@ -54,4 +54,38 @@ public class RefreshTokenFamilyTests
         var result = _family.Redeem(Guid.NewGuid(), Now);
         Assert.Equal(RedeemOutcome.Unknown, result.Outcome);
     }
+
+    [Fact]
+    public void Token_expirado_apresentado_e_removido_do_estado()
+    {
+        var token = _family.Issue(Guid.NewGuid(), Now);
+        _family.Redeem(token.Id, Now + TimeSpan.FromDays(8));       // Expired: sai do dicionário
+        var again = _family.Redeem(token.Id, Now + TimeSpan.FromDays(8));
+
+        Assert.Equal(RedeemOutcome.Unknown, again.Outcome);
+    }
+
+    [Fact]
+    public void Prune_devolve_familias_que_ficaram_sem_token_vivo()
+    {
+        var deadFamily = Guid.NewGuid();
+        var liveFamily = Guid.NewGuid();
+        _family.Issue(deadFamily, Now);
+        _family.Issue(liveFamily, Now + TimeSpan.FromDays(5)); // ainda vale no corte
+
+        var pruned = _family.PruneExpired(Now + TimeSpan.FromDays(8));
+
+        Assert.Equal(deadFamily, Assert.Single(pruned));
+    }
+
+    [Fact]
+    public void Reuso_informa_a_familia_revogada()
+    {
+        var familyId = Guid.NewGuid();
+        var stolen = _family.Issue(familyId, Now);
+        _family.Redeem(stolen.Id, Now + TimeSpan.FromHours(1));
+        var attack = _family.Redeem(stolen.Id, Now + TimeSpan.FromHours(2));
+
+        Assert.Equal(familyId, attack.FamilyId); // quem guarda estado por família limpa por aqui
+    }
 }

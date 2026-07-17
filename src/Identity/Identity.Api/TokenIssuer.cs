@@ -23,9 +23,14 @@ public sealed class TokenIssuer(IConfiguration config)
 
     public (string AccessToken, Guid RefreshToken) IssueFor(UserAccount user)
     {
+        var now = DateTimeOffset.UtcNow;
+        // Famílias mortas saem junto do dono — sem isso, uma entrada por login fica pra sempre.
+        foreach (var dead in _refreshTokens.PruneExpired(now))
+            _familyOwner.TryRemove(dead, out _);
+
         var familyId = Guid.NewGuid();
         _familyOwner[familyId] = user.Username;
-        var refresh = _refreshTokens.Issue(familyId, DateTimeOffset.UtcNow);
+        var refresh = _refreshTokens.Issue(familyId, now);
         return (MintAccessToken(user), refresh.Id);
     }
 
@@ -34,6 +39,8 @@ public sealed class TokenIssuer(IConfiguration config)
     {
         var result = _refreshTokens.Redeem(refreshTokenId, DateTimeOffset.UtcNow);
         var username = result.NewToken is { } rotated ? _familyOwner.GetValueOrDefault(rotated.FamilyId) : null;
+        if (result.RevokeFamily && result.FamilyId is { } revoked)
+            _familyOwner.TryRemove(revoked, out _);
         return (result, username);
     }
 
