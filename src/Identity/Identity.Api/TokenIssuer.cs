@@ -19,7 +19,8 @@ public sealed class TokenIssuer(IConfiguration config)
     private readonly System.Collections.Concurrent.ConcurrentDictionary<Guid, string> _familyOwner = new();
     private readonly SymmetricSecurityKey _key = new(
         System.Text.Encoding.UTF8.GetBytes(
-            config["Jwt:SigningKey"] ?? "dev-only-signing-key-with-32-bytes!!"));
+            config["Jwt:SigningKey"] ?? throw new InvalidOperationException(
+                "Jwt:SigningKey não configurado — o host resolve a chave no boot via PlatformSecrets.JwtSigningKey.")));
 
     public (string AccessToken, Guid RefreshToken) IssueFor(UserAccount user)
     {

@@ -47,7 +47,12 @@ public class KeycloakLoginFlowTests
             realm: "plataforma-linha", clientId: "identity", clientSecret: "s3cr3t");
 
     private static LoginFlow Flow(Func<IDictionary<string, string>, HttpResponseMessage> respond) =>
-        new(new InMemoryUserStore(), new TokenIssuer(new ConfigurationBuilder().Build()), Client(respond));
+        new(new InMemoryUserStore(), new TokenIssuer(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Jwt:SigningKey"] = Platform.ServiceDefaults.PlatformSecrets.DevJwtSigningKey,
+            })
+            .Build()), Client(respond));
 
     [Fact]
     public async Task Grant_400_pedindo_otp_vira_TotpRequired()

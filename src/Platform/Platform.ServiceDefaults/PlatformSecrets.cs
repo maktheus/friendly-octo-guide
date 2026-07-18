@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace Platform.ServiceDefaults;
 
@@ -10,6 +11,32 @@ namespace Platform.ServiceDefaults;
 /// </summary>
 public static class PlatformSecrets
 {
+    /// <summary>Chave de DEV. Pública por definição (está no repo) — só vale em Development.</summary>
+    public const string DevJwtSigningKey = "dev-only-signing-key-with-32-bytes!!";
+
+    /// <summary>
+    /// Resolve a chave de assinatura JWT em UM lugar (antes: literal duplicado em 5 hosts).
+    /// Ordem: config (populada pelo OpenBao no boot ou por env) → fallback de dev SÓ em
+    /// Development → fora disso, boot falha. Assinar token com chave que está num repo
+    /// público é equivalente a não assinar; falhar cedo é o único comportamento seguro.
+    /// </summary>
+    public static string JwtSigningKey(IConfiguration config, IHostEnvironment environment)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentNullException.ThrowIfNull(environment);
+
+        var key = config["Jwt:SigningKey"];
+        if (!string.IsNullOrEmpty(key))
+            return key;
+
+        if (environment.IsDevelopment())
+            return DevJwtSigningKey;
+
+        throw new InvalidOperationException(
+            "Jwt:SigningKey ausente. Fora de Development a chave vem do OpenBao/External Secrets " +
+            "(platform/jwt#signingKey); para rodar local, exporte ASPNETCORE_ENVIRONMENT=Development.");
+    }
+
     public static async Task<string?> TryGetAsync(IConfiguration config, string path, string key, CancellationToken ct = default)
     {
         var addr = config["OpenBao:Addr"];

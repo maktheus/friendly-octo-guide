@@ -8,14 +8,14 @@ public sealed record PermissionChangeRequest(string[]? Roles, Dictionary<string,
 /// <summary>
 /// Ações administrativas sobre usuários. TODA mudança de permissão vira trilha de
 /// auditoria (auditoria.admin.v1) — append-only, redigida, correlacionada por
-/// trace-id. Em prod estas rotas ficam atrás do RBAC do Gateway (papel admin);
-/// aqui a rota confia no ator do TOKEN, nunca no corpo.
+/// trace-id. O grupo exige token com papel admin AQUI (não só no Gateway): o ator
+/// da auditoria vem SEMPRE do token validado, nunca do corpo nem de um default.
 /// </summary>
 public static class AdminEndpoints
 {
     public static void MapAdminEndpoints(this WebApplication app)
     {
-        var admin = app.MapGroup("/v1/admin");
+        var admin = app.MapGroup("/v1/admin").RequireAuthorization("admin");
 
         admin.MapPost("/users/{username}/permissions",
             async (string username, PermissionChangeRequest req, IUserAdmin users, IAdminAuditTrail audit, HttpContext ctx, CancellationToken ct) =>
@@ -45,11 +45,13 @@ public static class AdminEndpoints
         });
     }
 
-    // O ator vem SEMPRE do token validado (identidade que o Gateway injeta),
-    // NUNCA do corpo — auditar com ator forjável não audita nada. Sem auth no dev
-    // local, o ator é o processo; em prod ctx.User está populado.
+    // O ator vem SEMPRE do token validado — auditar com ator forjável não audita
+    // nada. A policy "admin" barra requisição sem token antes de chegar aqui; se
+    // este throw disparar, a fiação de auth do host foi removida por engano.
     private static string ActorOf(HttpContext ctx) =>
-        ctx.User.Identity?.Name is { Length: > 0 } name ? name : "system:dev";
+        ctx.User.Identity?.Name is { Length: > 0 } name
+            ? name
+            : throw new InvalidOperationException("Rota admin sem ator autenticado — policy 'admin' ausente no host.");
 
     private static IReadOnlyList<string> RolesOf(HttpContext ctx) =>
         [.. ctx.User.FindAll("role").Select(c => c.Value)];

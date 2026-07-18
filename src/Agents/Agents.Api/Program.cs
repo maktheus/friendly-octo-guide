@@ -25,7 +25,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ValidIssuer = "identity",
         ValidAudience = "plataforma-linha",
         IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
-            builder.Configuration["Jwt:SigningKey"] ?? "dev-only-signing-key-with-32-bytes!!")),
+            PlatformSecrets.JwtSigningKey(builder.Configuration, builder.Environment))),
     });
 builder.Services.AddAuthorization();
 
