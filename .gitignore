@@ -17,3 +17,5 @@ coverage.json
 
 # Pact contracts gerados (publicados no broker no CI, não versionados)
 src/Contracts/pacts/
+# Schemas de capacidade gerados pelo build do Tauri (regenerados a cada build)
+clients/desktop/src-tauri/gen/schemas/
