@@ -1,6 +1,6 @@
 namespace Agents.Domain.Diagnosis;
 
-public enum SignalKind { Alert, Trace, Telemetry, Log }
+public enum SignalKind { Alert, Trace, Telemetry, Log, MesEvento }
 
 public enum Severity { Info, Warning, Error, Critical }
 

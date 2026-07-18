@@ -1,4 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <!-- Regra de negócio pura. NUNCA adicionar referência de infra aqui
-       (Kafka, Npgsql, HTTP...) — é o que mantém a suíte de testes em segundos. -->
+       (Kafka, Npgsql, HTTP...) — é o que mantém a suíte de testes em segundos.
+       Predictive.Domain é puro também: é a camada de processamento do iDMSS
+       (DiagnosisRanking) que esta interface consome. -->
+  <ItemGroup>
+    <ProjectReference Include="../../Predictive/Predictive.Domain/Predictive.Domain.csproj" />
+  </ItemGroup>
 </Project>

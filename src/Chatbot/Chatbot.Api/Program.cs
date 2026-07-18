@@ -44,6 +44,8 @@ builder.Services.AddHttpClient("core-execution", c =>
     c.BaseAddress = new Uri(builder.Configuration["CoreExecution:BaseUrl"] ?? "http://core-execution:8080"));
 builder.Services.AddHttpClient("knowledge", c =>
     c.BaseAddress = new Uri(builder.Configuration["Knowledge:BaseUrl"] ?? "http://knowledge:8080"));
+builder.Services.AddHttpClient("agents", c =>
+    c.BaseAddress = new Uri(builder.Configuration["Agents:BaseUrl"] ?? "http://agents:8080"));
 builder.Services.AddMcpServer()
     .WithHttpTransport()
     .WithTools<PlataformaTools>();

@@ -21,6 +21,8 @@ public static class ToolRegistry
                 RouteRequirement.ForRoles("operador", "admin")),
             ["consultar_causa_raiz"] = new("consultar_causa_raiz", ToolKind.Read,
                 RouteRequirement.ForRoles("operador", "admin")),
+            ["diagnosticar_parada"] = new("diagnosticar_parada", ToolKind.Read,
+                RouteRequirement.ForRoles("operador", "admin")),
             ["abortar_ordem"] = new("abortar_ordem", ToolKind.DestructiveAct,
                 RouteRequirement.ForRoles("operador", "admin")),
             ["propor_comando_linha"] = new("propor_comando_linha", ToolKind.DestructiveAct,

@@ -51,14 +51,20 @@ Commits: `267fffb` (MES), `6e3f373` (Ishikawa), `f7d0582` (iDMSS + seed).
 - **Bloqueio externo que segue**: conhecimento tácito (workshops de Ishikawa com a
   operação) pra substituir as hipóteses por causas reais.
 
-### #8 iDMSS Victor — camada de interface (agente)
-- **Agente iDMSS**: costurar `Chatbot` (interface) + `Decision.Engine` (guardrails,
-  aprovação por criticidade) + `Agents`, consumindo `mes.eventos.v1` + base Ishikawa
-  + `DiagnosisRanking`. Ferramenta MCP por operação.
-- **Random Forest servido**: hoje o ranking usa peso 1.0 (frequência); o RF entra
-  como peso. Servir modelo estático (worker) → treino no #11.
-- **Validar**: conversa "por que a linha 2 parou?" retornando causa ranqueada + ação.
-- **Bloqueio externo**: dataset rotulado de falhas do PIM p/ treinar o RF.
+### #8 iDMSS Victor — camada de interface (agente) — **FEITO 18/07 (baseline)**
+- **Agente iDMSS costurado**: `Agents` consome `mes.eventos.v1` (`MesIngestService` →
+  janela de sinais), `IdmssDiagnosis` (Agents.Domain) agrega evidência por sintoma e
+  ranqueia via `DiagnosisRanking` (Predictive.Domain, referência pura), e o endpoint
+  `GET /v1/agents/idmss/diagnose` enriquece o topo do ranking com a base de causa
+  raiz do Knowledge (épico #7) usando o token do usuário. Ação física continua
+  exclusiva do `/propor-acao` → Decision Engine.
+- **MCP**: ferramenta `diagnosticar_parada` no Chatbot — a conversa "por que a linha
+  parou?" vira essa chamada.
+- **Validado rodando**: simulador MES → Kafka → janela → ranking explicável
+  ("N× · peso 1.00") + causas Ishikawa na resposta; 401 sem token.
+- **Random Forest servido (pendente, bloqueado)**: o peso do modelo já é plugável
+  (`pesoModelo` no `IdmssDiagnosis.Rank`); treinar/servir depende do dataset
+  rotulado de falhas do PIM (→ #11).
 
 ### #9 Hallyson — visão em SPI (caminho de imagem)
 - **`schemas/inspecao-smt.avsc`**: resultado de inspeção com `image_ref` (ponteiro

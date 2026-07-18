@@ -108,6 +108,28 @@ public sealed class PlataformaTools(
         return await response.Content.ReadAsStringAsync(ct);
     }
 
+    [McpServerTool(Name = "diagnosticar_parada")]
+    [Description("iDMSS: 'por que a linha parou?' — ranking explicável dos sintomas MES recentes do ativo, enriquecido com as causas raiz Ishikawa da base de conhecimento.")]
+    public async Task<string> DiagnosticarParadaAsync(
+        [Description("Id do ativo/linha (ex.: 'envase.spitau.linha2.enchedora')")] string ativoId,
+        CancellationToken ct)
+    {
+        Authorize("diagnosticar_parada", humanConfirmed: false);
+
+        var client = httpFactory.CreateClient("agents");
+        var bearer = httpContext.HttpContext?.Request.Headers.Authorization.ToString();
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+            new Uri($"/v1/agents/idmss/diagnose?ativoId={Uri.EscapeDataString(ativoId)}", UriKind.Relative));
+        if (!string.IsNullOrEmpty(bearer))
+            request.Headers.TryAddWithoutValidation("Authorization", bearer);
+
+        var response = await client.SendAsync(request, ct);
+        if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+            return $"Sem eventos MES recentes para {ativoId} — nada a diagnosticar na janela.";
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(ct);
+    }
+
     // O agente nunca passa por cima do guardrail: negação vira exceção MCP visível no trace.
     private void Authorize(string tool, bool humanConfirmed)
     {

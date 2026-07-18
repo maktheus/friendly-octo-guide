@@ -33,7 +33,12 @@ builder.Services.AddSingleton(instrumentation);
 builder.Services.AddSingleton(new SignalWindow(
     TimeSpan.FromHours(builder.Configuration.GetValue("Agents:WindowHours", 24))));
 builder.Services.AddHostedService<AlertIngestService>();
+builder.Services.AddHostedService<MesIngestService>(); // alimenta o iDMSS (épico #8)
 builder.Services.AddHostedService<DailyReportService>();
+
+// O iDMSS enriquece o ranking com a base de causa raiz do Knowledge (épico #7).
+builder.Services.AddHttpClient("knowledge", c =>
+    c.BaseAddress = new Uri(builder.Configuration["Knowledge:BaseUrl"] ?? "http://knowledge:8080"));
 
 var app = builder.Build();
 app.UseAuthentication();
@@ -48,6 +53,65 @@ app.MapGet("/v1/agents/diagnose", (SignalWindow window) =>
     var diagnosis = IncidentDiagnoser.Diagnose(window.Snapshot(), TimeSpan.FromMinutes(30));
     activity?.SetTag("diagnosis.found", diagnosis is not null);
     return diagnosis is null ? Results.NoContent() : Results.Ok(diagnosis);
+}).RequireAuthorization();
+
+// iDMSS (épico #8): "por que a linha parou?" — ranking explicável dos sintomas MES
+// da janela (frequência × peso do modelo; RF pluga no peso) enriquecido com a base
+// de causa raiz Ishikawa do Knowledge. Interface de decisão, nunca de execução:
+// ação física segue pelo /propor-acao → Decision Engine.
+app.MapGet("/v1/agents/idmss/diagnose", async (
+    string ativoId, int? top, SignalWindow window,
+    IHttpClientFactory http, HttpContext ctx, CancellationToken ct) =>
+{
+    using var activity = instrumentation.Activity.StartActivity("agents.idmss.diagnose");
+    var result = Agents.Domain.Idmss.IdmssDiagnosis.Rank(
+        window.Snapshot(), ativoId, Math.Clamp(top ?? 3, 1, 10));
+    activity?.SetTag("idmss.ocorrencias", result.Ocorrencias);
+
+    if (result.Ranking.Count == 0)
+        return Results.NoContent();
+
+    // Enriquecimento Ishikawa: busca semântica pro sintoma do topo, com o token do
+    // usuário (a visibilidade é DELE). Knowledge fora do ar não cala o ranking.
+    System.Text.Json.JsonElement? causasProvaveis = null;
+    try
+    {
+        var client = http.CreateClient("knowledge");
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            new Uri("/v1/knowledge/graphql", UriKind.Relative));
+        var bearer = ctx.Request.Headers.Authorization.ToString();
+        if (!string.IsNullOrEmpty(bearer))
+            request.Headers.TryAddWithoutValidation("Authorization", bearer);
+        request.Content = JsonContent.Create(new
+        {
+            query = """
+                query($s:String!, $a:String) {
+                  diagnosticoPorSintoma(sintoma:$s, ativoId:$a, limit:3) {
+                    score
+                    causa { categoria sintoma causa confianca }
+                  }
+                }
+                """,
+            variables = new { s = result.Ranking[0].Sintoma, a = (string?)null },
+        });
+        var response = await client.SendAsync(request, ct);
+        if (response.IsSuccessStatusCode)
+        {
+            causasProvaveis = System.Text.Json.JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(ct)).RootElement.Clone();
+        }
+    }
+    catch (HttpRequestException) { /* ranking responde mesmo sem a base */ }
+
+    return Results.Ok(new
+    {
+        result.AtivoId,
+        result.Ocorrencias,
+        ranking = result.Ranking,
+        causasProvaveis,
+        proximoPasso = "Validar a causa apontada com a operação; confirmada, registrar via "
+            + "registrarCausaRaiz (Knowledge). Ação física NUNCA sai daqui: /v1/agents/propor-acao → Decision Engine.",
+    });
 }).RequireAuthorization();
 
 // Relatório do dia sob demanda (o agendado publica no Kafka; este é pra consulta).
