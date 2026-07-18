@@ -30,13 +30,19 @@ Commits: `267fffb` (MES), `6e3f373` (Ishikawa), `f7d0582` (iDMSS + seed).
 
 ## O que falta, por épico (para implementar e validar depois)
 
-### #6 Conector MES — adapter real + cursor persistente
-- **`RestMesAdapter` / `SqlMesAdapter`** implementando `IMesAdapter` (hoje só o
-  `SimulatorMesAdapter`). Poll do MES real (REST ou SQL), mapeando pra `RawMesRow`.
-- **Persistir o cursor** (hoje em memória → re-poll no restart). Uma tabela Postgres
-  ou chave no Valkey.
-- **Validar**: subir compose (Kafka), rodar o worker, ver evento em `mes.eventos.v1`.
-- **Bloqueio externo**: endpoint/credencial do MES real.
+### #6 Conector MES — adapter real + cursor persistente — **FEITO 18/07**
+- **`RestMesAdapter`** implementando `IMesAdapter`: `GET {base}/eventos?after={cursor}`,
+  X-Api-Key opcional (`Mes:Rest:ApiKey`, do OpenBao em prod); parsing do payload é
+  domínio puro (`RestMesPayload`) — contrato quebrado grita, não perde linha calado.
+  Liga com `Mes:Rest:BaseUrl`; sem ela, simulador de dev.
+- **Cursor durável**: `PostgresCursorStore` (tabela `mes_cursor`, upsert por
+  source) quando há `ConnectionStrings:Postgres`; memória caso contrário. Poll que
+  falha loga e tenta de novo — nunca derruba o worker nem avança cursor não lido.
+- **Validado rodando**: MES mock REST → 4 eventos em `mes.eventos.v1` → cursor
+  `000104` no Postgres → **restart retomou do cursor** (mock só recebeu polls
+  `after=000104`, zero re-poll).
+- **Bloqueio externo que segue**: endpoint/credencial do MES real (e `SqlMesAdapter`
+  se o MES da fábrica só falar SQL).
 
 ### #7 Ishikawa — persistência + exposição (2º push) — **FEITO 18/07**
 - ~~KnowledgeStore~~ **`CausaRaizStore`** (`Knowledge.Api`): tabela `causa_raiz`

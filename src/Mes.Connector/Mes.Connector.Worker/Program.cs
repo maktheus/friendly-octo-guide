@@ -30,12 +30,38 @@ builder.Services.AddOpenTelemetry()
 
 builder.Services.AddSingleton(MesOptions.From(builder.Configuration));
 builder.Services.AddSingleton<MesEventSink>();
-// Adapter genérico: o simulador roda em dev. Um RestMesAdapter/SqlMesAdapter pluga
-// aqui implementando IMesAdapter quando o MES real existir — sem tocar no domínio.
-builder.Services.AddSingleton<IMesAdapter, SimulatorMesAdapter>();
+
+// Cursor durável com Postgres configurado; sem ele, memória (fase 0 explícita).
+var pgConn = builder.Configuration.GetConnectionString("Postgres");
+if (!string.IsNullOrEmpty(pgConn))
+    builder.Services.AddSingleton<ICursorStore>(new PostgresCursorStore(pgConn));
+else
+    builder.Services.AddSingleton<ICursorStore, InMemoryCursorStore>();
+
+// Adapter: Mes:Rest:BaseUrl liga o MES real via REST; sem ela, simulador de dev.
+var mesRestBaseUrl = builder.Configuration["Mes:Rest:BaseUrl"];
+if (!string.IsNullOrEmpty(mesRestBaseUrl))
+{
+    builder.Services.AddHttpClient<IMesAdapter, RestMesAdapter>(c =>
+    {
+        c.BaseAddress = new Uri(mesRestBaseUrl.EndsWith('/') ? mesRestBaseUrl : mesRestBaseUrl + "/");
+        c.Timeout = TimeSpan.FromSeconds(15);
+        if (builder.Configuration["Mes:Rest:ApiKey"] is { Length: > 0 } apiKey)
+            c.DefaultRequestHeaders.Add("X-Api-Key", apiKey); // em prod a chave vem do OpenBao
+    });
+}
+else
+{
+    builder.Services.AddSingleton<IMesAdapter, SimulatorMesAdapter>();
+}
+
 builder.Services.AddHostedService<MesConnectorWorker>();
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+if (host.Services.GetRequiredService<ICursorStore>() is PostgresCursorStore durable)
+    await durable.EnsureSchemaAsync(CancellationToken.None);
+
+await host.RunAsync();
 
 namespace Mes.Connector.Worker
 {
