@@ -32,7 +32,8 @@ plataforma-linha/
 ├── schemas/                     # contratos dos tópicos Kafka — mudança de contrato começa AQUI
 ├── deploy/                      # manifests K8s por serviço (HPA/KEDA) + espinha de observabilidade
 ├── docker-compose.yml           # dev local: Kafka, Postgres, Valkey, MinIO, Mosquitto,
-│                                #   OTel Collector, Loki, Tempo, VictoriaMetrics, Grafana, ntfy
+│                                #   OTel Collector, Loki, Tempo, VictoriaMetrics, Grafana,
+│                                #   ntfy, Mailpit (SMTP dev do canal e-mail)
 └── Directory.Build.props        # nullable, warnings-as-errors, cobertura mínima — vale pra todos
 ```
 

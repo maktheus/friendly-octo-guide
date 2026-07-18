@@ -40,6 +40,7 @@ builder.Services.AddSingleton<IAmazonS3>(new AmazonS3Client(new AmazonS3Config
 }));
 builder.Services.AddSingleton(sp => new S3ObjectStore(sp.GetRequiredService<IAmazonS3>(), options.Bucket));
 builder.Services.AddHostedService<ArchiverConsumer>();
+builder.Services.AddHostedService<LineageBridge>(); // linhagem → Marquez (liga com Marquez:BaseUrl)
 
 await builder.Build().RunAsync();
 
@@ -58,6 +59,10 @@ namespace Data.Archiver.Worker
             Meter.CreateCounter<long>("archiver.objects");
         public static readonly Counter<long> Bytes =
             Meter.CreateCounter<long>("archiver.bytes", unit: "By");
+        public static readonly Counter<long> LineageDelivered =
+            Meter.CreateCounter<long>("archiver.lineage.delivered");
+        public static readonly Counter<long> LineageRejected =
+            Meter.CreateCounter<long>("archiver.lineage.rejected");
     }
 
     public sealed record ArchiverOptions(

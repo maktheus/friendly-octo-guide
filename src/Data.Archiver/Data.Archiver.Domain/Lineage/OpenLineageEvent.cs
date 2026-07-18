@@ -18,9 +18,30 @@ public sealed record OpenLineageEvent(
 public sealed record RunNode(string RunId);
 public sealed record JobNode(string Namespace, string Name);
 public sealed record Dataset(string Namespace, string Name, DatasetFacets Facets);
-public sealed record DatasetFacets(SchemaFacet? Schema = null, ProducerFacet? DataSource = null, long? RecordCount = null);
-public sealed record SchemaFacet(string Version);
-public sealed record ProducerFacet(string Service);
+public sealed record DatasetFacets(SchemaFacet? Schema = null, DataSourceFacet? DataSource = null, CountFacet? RecordCount = null);
+
+/// <summary>
+/// Todo facet OpenLineage EXIGE _producer e _schemaURL (BaseFacet do spec) — sem
+/// eles o Marquez recusa o RunEvent inteiro com 422. Descoberto validando de
+/// verdade contra a API; não é opcional.
+/// </summary>
+public abstract record FacetBase
+{
+    [System.Text.Json.Serialization.JsonPropertyName("_producer")]
+    public string FacetProducer { get; init; } = LineageBuilder.ProducerUri;
+
+    [System.Text.Json.Serialization.JsonPropertyName("_schemaURL")]
+    public string FacetSchemaUrl { get; init; } = LineageBuilder.BaseFacetSchemaUrl;
+}
+
+public sealed record SchemaFacet(string Version) : FacetBase;
+
+/// <summary>
+/// DataSourceDatasetFacet do spec: name + uri. O Marquez faz URI.parse(uri) sem
+/// null-check — sem o campo, o POST inteiro morre com 500 (NPE no OpenLineageDao).
+/// </summary>
+public sealed record DataSourceFacet(string Name, string Uri) : FacetBase;
+public sealed record CountFacet(long Rows) : FacetBase;
 
 /// <summary>
 /// Constrói o evento de linhagem de um objeto. Puro e determinístico (tempo e runId
@@ -30,7 +51,8 @@ public static class LineageBuilder
 {
     public const string Namespace = "plataforma-linha";
     public const string JobName = "data-archiver";
-    private const string ProducerUri = "https://github.com/stpedr/friendly-octo-guide/tree/main/src/Data.Archiver";
+    public const string ProducerUri = "https://github.com/maktheus/friendly-octo-guide/tree/main/src/Data.Archiver";
+    public const string BaseFacetSchemaUrl = "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/BaseFacet";
 
     public static OpenLineageEvent ForArchivedObject(
         string sourceTopic, int partition, long firstOffset,
@@ -41,15 +63,15 @@ public static class LineageBuilder
         var input = new Dataset(
             Namespace: $"kafka://{sourceTopic}",
             Name: $"{sourceTopic}/partition={partition}/offset={firstOffset}",
-            Facets: new DatasetFacets(DataSource: new ProducerFacet(producerService)));
+            Facets: new DatasetFacets(DataSource: new DataSourceFacet(producerService, $"kafka://{sourceTopic}")));
 
         var output = new Dataset(
             Namespace: $"s3://{bucket}",
             Name: objectKey,
             Facets: new DatasetFacets(
                 Schema: new SchemaFacet(schemaVersion),
-                DataSource: new ProducerFacet(producerService),
-                RecordCount: recordCount));
+                DataSource: new DataSourceFacet(producerService, $"s3://{bucket}"),
+                RecordCount: new CountFacet(recordCount)));
 
         return new OpenLineageEvent(
             EventType: "COMPLETE",

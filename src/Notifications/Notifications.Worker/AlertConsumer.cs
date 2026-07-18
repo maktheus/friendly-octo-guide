@@ -83,15 +83,38 @@ public sealed class NtfyPusher(HttpClient http)
     }
 }
 
-/// <summary>Fase 0: e-mail vira log estruturado. Fase 1: SMTP relay interno.</summary>
-public sealed partial class EmailSender(ILogger<EmailSender> log)
+/// <summary>
+/// E-mail de alerta. Com Smtp:Host configurado, envia de verdade pelo relay
+/// interno (Mailpit no compose, relay corporativo em prod); sem ele, continua o
+/// log estruturado da fase 0 — a interface não muda, só a fiação. O contato da
+/// escada ("oncall-primario") vira endereço em Smtp:ContactDomain.
+/// </summary>
+public sealed partial class EmailSender(IConfiguration config, ILogger<EmailSender> log)
 {
-    public Task SendAsync(string contact, AlertMessage alert, CancellationToken ct)
+    private readonly string? _host = config["Smtp:Host"];
+    private readonly int _port = config.GetValue("Smtp:Port", 1025);
+    private readonly string _from = config["Smtp:From"] ?? "alertas@plataforma-linha.local";
+    private readonly string _contactDomain = config["Smtp:ContactDomain"] ?? "plataforma-linha.local";
+
+    public async Task SendAsync(string contact, AlertMessage alert, CancellationToken ct)
     {
-        LogEmail(contact, alert.Title, alert.Severity);
-        return Task.CompletedTask;
+        if (string.IsNullOrEmpty(_host))
+        {
+            LogEmail(contact, alert.Title, alert.Severity);
+            return;
+        }
+
+        using var client = new System.Net.Mail.SmtpClient(_host, _port);
+        using var mail = new System.Net.Mail.MailMessage(
+            _from, $"{contact}@{_contactDomain}",
+            $"[{alert.Severity}] {alert.Title}", alert.Body);
+        await client.SendMailAsync(mail, ct);
+        LogSent(contact, alert.Title, alert.Severity);
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "E-mail para {Contact}: {Title} [{Severity}]")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "E-mail (log, sem SMTP) para {Contact}: {Title} [{Severity}]")]
     private partial void LogEmail(string contact, string title, Severity severity);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "E-mail ENVIADO para {Contact}: {Title} [{Severity}]")]
+    private partial void LogSent(string contact, string title, Severity severity);
 }

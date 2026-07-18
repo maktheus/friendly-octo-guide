@@ -37,6 +37,7 @@ public sealed class S3ObjectStore(IAmazonS3 s3, string bucket)
         }
 
         payload.Position = 0;
+        var writtenBytes = payload.Length; // ANTES do Put: o SDK descarta o InputStream (AutoCloseStream)
         var request = new PutObjectRequest
         {
             BucketName = bucket,
@@ -50,6 +51,6 @@ public sealed class S3ObjectStore(IAmazonS3 s3, string bucket)
             request.ObjectLockRetainUntilDate = DateTime.UtcNow.Add(wormRetention);
         }
         await s3.PutObjectAsync(request, ct);
-        return payload.Length;
+        return writtenBytes;
     }
 }

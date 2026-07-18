@@ -7,6 +7,8 @@ public class LineageBuilderTests
 {
     private static readonly DateTimeOffset T = new(2026, 7, 13, 4, 0, 0, TimeSpan.Zero);
     private static readonly Guid Run = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly System.Text.Json.JsonSerializerOptions WebJson =
+        new(System.Text.Json.JsonSerializerDefaults.Web);
 
     private static OpenLineageEvent Build() => LineageBuilder.ForArchivedObject(
         sourceTopic: "linha.telemetria.v1", partition: 2, firstOffset: 12345,
@@ -33,8 +35,26 @@ public class LineageBuilderTests
     {
         var output = Build().Outputs[0];
         Assert.Equal("sensor-reading.v1", output.Facets.Schema!.Version);
-        Assert.Equal("telemetry-ingest", output.Facets.DataSource!.Service);
-        Assert.Equal(5000, output.Facets.RecordCount);
+        Assert.Equal("telemetry-ingest", output.Facets.DataSource!.Name);
+        Assert.Equal("s3://linha-lake", output.Facets.DataSource.Uri); // Marquez faz URI.parse sem null-check
+        Assert.Equal(5000, output.Facets.RecordCount!.Rows);
+    }
+
+    [Fact]
+    public void Todo_facet_carrega_producer_e_schemaURL_do_spec()
+    {
+        // Sem _producer/_schemaURL (BaseFacet), o Marquez recusa o RunEvent com 422 —
+        // validado contra a API real. O nome serializado precisa ser EXATO.
+        var json = System.Text.Json.JsonSerializer.Serialize(Build(), WebJson);
+
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var facets = doc.RootElement.GetProperty("outputs")[0].GetProperty("facets");
+        foreach (var facetName in (string[])["schema", "dataSource", "recordCount"])
+        {
+            var facet = facets.GetProperty(facetName);
+            Assert.False(string.IsNullOrEmpty(facet.GetProperty("_producer").GetString()));
+            Assert.False(string.IsNullOrEmpty(facet.GetProperty("_schemaURL").GetString()));
+        }
     }
 
     [Fact]

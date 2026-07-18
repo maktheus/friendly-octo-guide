@@ -274,6 +274,12 @@ services:
     command: ["serve"]
     ports: ["8090:80"]
 
+  # Relay SMTP de dev + caixa de entrada web — o canal e-mail do Notifications
+  # aponta pra cá com Smtp__Host=localhost (em prod: relay corporativo).
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["1025:1025", "8025:8025"]
+
 volumes:
   pgdata:
   pgreplica:
