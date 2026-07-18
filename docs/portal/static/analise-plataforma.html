@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>plataforma-linha — Análise de Arquitetura e Problemas</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --border:#30363d;
+    --txt:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --blue:#58a6ff; --green:#3fb950; --yellow:#d29922; --orange:#f0883e;
+    --red:#f85149; --purple:#bc8cff; --cyan:#39c5cf; --pink:#ff7b72;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.55;padding:0 0 80px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  header.hero{background:linear-gradient(160deg,#161b22 0%,#0d1117 70%);border-bottom:1px solid var(--border);padding:48px 0 36px;margin-bottom:36px}
+  .hero h1{font-size:1.9rem;font-weight:700}
+  .hero h1 span{color:var(--blue)}
+  .hero p.sub{color:var(--muted);max-width:860px;margin-top:10px;font-size:1.02rem}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:26px}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+  .kpi b{font-size:1.5rem;display:block;color:var(--blue)}
+  .kpi span{color:var(--muted);font-size:.82rem}
+  h2{font-size:1.35rem;margin:48px 0 6px;padding-top:8px;border-top:1px solid var(--border)}
+  h2 .tag{font-size:.7rem;vertical-align:middle;background:var(--panel2);border:1px solid var(--border);border-radius:20px;padding:2px 10px;color:var(--muted);margin-left:10px;font-weight:500}
+  h3{font-size:1.05rem;margin:26px 0 10px;color:var(--blue)}
+  p.lead{color:var(--muted);margin-bottom:18px;max-width:900px}
+  .diagram{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;overflow-x:auto;margin:16px 0}
+  .lane{display:flex;align-items:stretch;gap:0;margin-bottom:6px;min-width:900px}
+  .lane-label{flex:0 0 118px;display:flex;align-items:center;font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding-right:10px;text-align:right;justify-content:flex-end}
+  .lane-body{flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0}
+  .node{border-radius:8px;padding:7px 12px;font-size:.8rem;border:1px solid;white-space:nowrap;position:relative}
+  .node small{display:block;font-size:.66rem;opacity:.75;white-space:normal;max-width:180px}
+  .n-client{background:#1a2c42;border-color:#2f5a8f;color:#9ecbff}
+  .n-access{background:#20263a;border-color:#4a5590;color:#b3bdf5}
+  .n-edge{background:#3a2a1a;border-color:#8f6a2f;color:#ffd28a}
+  .n-svc{background:#16281d;border-color:#2f6b42;color:#8fe0a8}
+  .n-kafka{background:#2d1a2e;border-color:#7d3f85;color:#e8a7f0;font-weight:600}
+  .n-data{background:#102a30;border-color:#2a6b75;color:#7fd8e5}
+  .n-ai{background:#301b1b;border-color:#8a4040;color:#ffa8a0}
+  .n-obs{background:#26221a;border-color:#6b5c2f;color:#e5d28a}
+  .n-gap{background:#2d1215;border-color:#f85149;color:#ff9992;border-style:dashed}
+  .arrow{color:var(--dim);font-size:1rem;padding:0 2px;flex:0 0 auto}
+  .down-note{color:var(--dim);font-size:.72rem;margin:2px 0 2px 128px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:860px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin:14px 0}
+  .card h4{font-size:.95rem;margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;margin:14px 0}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+  td{padding:8px 10px;border-bottom:1px solid #21262d;vertical-align:top}
+  tr:hover td{background:#161b2255}
+  code{background:#21262d;border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-family:'Cascadia Code',Consolas,monospace;font-size:.8em;color:#9ecbff}
+  .badge{display:inline-block;border-radius:20px;padding:1px 10px;font-size:.7rem;font-weight:600;white-space:nowrap}
+  .b-ok{background:#12341c;color:#3fb950;border:1px solid #2f6b42}
+  .b-code{background:#1a2c42;color:#58a6ff;border:1px solid #2f5a8f}
+  .b-cfg{background:#332a12;color:#d29922;border:1px solid #6b5c2f}
+  .b-wait{background:#2d2230;color:#bc8cff;border:1px solid #6a4a85}
+  .b-gap{background:#3d1418;color:#f85149;border:1px solid #8a3a3a}
+  .prob{border-left:4px solid;border-radius:0 10px 10px 0;background:var(--panel);border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:16px 20px;margin:12px 0}
+  .prob h4{font-size:.95rem;margin-bottom:6px}
+  .prob p{font-size:.88rem;color:var(--muted)}
+  .prob p b{color:var(--txt)}
+  .prob .where{font-size:.76rem;color:var(--dim);margin-top:8px}
+  .p-crit{border-left-color:var(--red)}
+  .p-logic{border-left-color:var(--orange)}
+  .p-state{border-left-color:var(--yellow)}
+  .p-idea{border-left-color:var(--blue)}
+  .p-doc{border-left-color:var(--purple)}
+  .sev{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:block}
+  .s-crit{color:var(--red)}.s-logic{color:var(--orange)}.s-state{color:var(--yellow)}.s-idea{color:var(--blue)}.s-doc{color:var(--purple)}
+  .anatomy{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap;margin:16px 0}
+  .an-box{flex:1;min-width:230px;border:1px solid var(--border);border-radius:10px;padding:16px;background:var(--panel2)}
+  .an-box h4{font-size:.9rem;margin-bottom:6px}
+  .an-box.pure{border-color:#2f6b42}.an-box.pure h4{color:var(--green)}
+  .an-box.io{border-color:#8f6a2f}.an-box.io h4{color:var(--yellow)}
+  .an-box.test{border-color:#2f5a8f}.an-box.test h4{color:var(--blue)}
+  .an-box p{font-size:.8rem;color:var(--muted)}
+  .an-box ul{font-size:.78rem;color:var(--muted);padding-left:18px;margin-top:6px}
+  ol.reco{padding-left:22px;margin:14px 0}
+  ol.reco li{margin:10px 0;font-size:.92rem}
+  ol.reco li b{color:var(--blue)}
+  ol.reco li span{color:var(--muted)}
+  .epic-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0;font-size:.85rem}
+  .epic-chip{border-radius:8px;padding:6px 12px;border:1px solid var(--border);background:var(--panel2)}
+  .epic-chip b{display:block;font-size:.8rem}
+  .epic-chip small{color:var(--muted);font-size:.7rem}
+  .done{border-color:#2f6b42}.done b{color:var(--green)}
+  .todo{border-color:#6b5c2f}.todo b{color:var(--yellow)}
+  .blocked{border-color:#8a3a3a}.blocked b{color:var(--red)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.75rem;color:var(--muted);margin:10px 0 4px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+  .footnote{color:var(--dim);font-size:.78rem;margin-top:40px;border-top:1px solid var(--border);padding-top:14px}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <h1><span>plataforma-linha</span> — status, arquitetura e problemas</h1>
+  <p class="sub">Monorepo .NET 10 de uma plataforma de observabilidade e IA para linha SMT/SMD (Indústria 4.0, roadmap acatech).
+  Análise feita sobre o clone em <code>E:\UFAM\jabil\friendly-octo-guide</code>, commit <code>9223571</code> (17/07/2026).
+  Serve a 3 propostas de mestrado (iDMSS/Victor, visão SPI/Hallyson, inferência lógica/Jeymerson) + épicos de infraestrutura.</p>
+  <div class="kpis">
+    <div class="kpi"><b>16</b><span>serviços em src/</span></div>
+    <div class="kpi"><b>179</b><span>arquivos C#</span></div>
+    <div class="kpi"><b>54</b><span>commits (jun–jul/26)</span></div>
+    <div class="kpi"><b>11</b><span>schemas Avro</span></div>
+    <div class="kpi"><b>26</b><span>workflows de CI</span></div>
+    <div class="kpi"><b>4</b><span>pessoas no time</span></div>
+  </div>
+</div></header>
+
+<div class="wrap">
+
+<!-- ============ COMO ESTÁ SENDO IMPLEMENTADO ============ -->
+<h2>1 · Como está sendo implementado <span class="tag">visão micro — anatomia de cada serviço</span></h2>
+<p class="lead">Todos os 16 serviços seguem o mesmo padrão de 3 projetos. A regra central do repo:
+<b>Domain puro nunca referencia infra</b> (Kafka, Npgsql, HTTP) — é o que mantém a suíte de testes rápida e o gate de TDD viável no CI.</p>
+
+<div class="anatomy">
+  <div class="an-box pure">
+    <h4>■ &lt;Serviço&gt;.Domain</h4>
+    <p>Regra de negócio pura, determinística, sem IO. É onde os testes valem de verdade.</p>
+    <ul>
+      <li>Ex.: <code>AnomalyDetector</code> (EWMA/z-score)</li>
+      <li><code>IshikawaClassifier</code> (regras 6M)</li>
+      <li><code>ApprovalPolicy</code> (guardrails)</li>
+      <li><code>PollCursor</code>, <code>TokenBucket</code>, <code>RouteTable</code></li>
+    </ul>
+  </div>
+  <div class="an-box io">
+    <h4>■ &lt;Serviço&gt;.Api / .Worker</h4>
+    <p>Host de IO: Kafka consumer/producer, Postgres, HTTP. <b>CI só compila — não executa.</b> "Verde" aqui ≠ funciona.</p>
+    <ul>
+      <li>Ex.: <code>ScoringLoop</code>, <code>AlertConsumer</code></li>
+      <li><code>MesConnectorWorker</code>, <code>OutboxRelay</code></li>
+      <li>Instrumentação via <code>Platform.ServiceDefaults</code></li>
+    </ul>
+  </div>
+  <div class="an-box test">
+    <h4>■ &lt;Serviço&gt;.Tests</h4>
+    <p>Gate de CI: PR que muda <code>src/**</code> sem mudar o <code>*.Tests</code> é reprovado. Cobertura mínima de 80% no Domain.</p>
+    <ul>
+      <li>Convenções: schema-first, outbox, quarentena/DLQ, "nada se perde calado"</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Status por serviço</h3>
+<div class="legend">
+  <span><span class="badge b-ok">RODOU LOCAL</span> validado na máquina do autor</span>
+  <span><span class="badge b-code">SÓ COMPILA</span> código + testes, sem validação de runtime</span>
+  <span><span class="badge b-cfg">SÓ CONFIG</span> manifest/chart pronto, nunca executado</span>
+  <span><span class="badge b-wait">BLOQUEADO</span> depende de GPU / SDK / dado externo</span>
+</div>
+<table>
+<tr><th>Serviço</th><th>Papel</th><th>Status</th><th>Observação da análise</th></tr>
+<tr><td><code>Gateway</code></td><td>YARP na borda: JWT, RBAC/ABAC, rate limit, RUM</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Rota negada por padrão (bom); rota <code>/v1/linha</code> autorizada mas sem cluster YARP (morta)</td></tr>
+<tr><td><code>Identity</code></td><td>Login senha→TOTP, JWT 5 min, refresh rotativo</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>TOTP RFC 6238 sólido; mas chave simétrica literal e usuários/refresh em memória</td></tr>
+<tr><td><code>Core.Execution</code></td><td>Ordens de produção + outbox transacional</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Padrão outbox bem aplicado (estado + evento na mesma transação)</td></tr>
+<tr><td><code>Edge.ProtocolGateway</code></td><td>MQTT/Modbus → Avro → Kafka, buffer store-and-forward</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Buffer "store-and-forward" é em memória — morre com o processo</td></tr>
+<tr><td><code>Telemetry.Ingest</code></td><td>Quality gate → Postgres ou quarentena</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Limites físicos de sensor hardcoded no código</td></tr>
+<tr><td><code>Predictive</code></td><td>EWMA/z-score online + drift + ranking iDMSS</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Bug de flatline no detector; alerta publicado como JSON anônimo (ver §4)</td></tr>
+<tr><td><code>Notifications</code></td><td>Escada on-call, push ntfy</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Desserialização de enum quebra com o payload do Predictive (ver §4)</td></tr>
+<tr><td><code>Decision.Engine</code></td><td>Envelope físico + aprovação por criticidade</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Domínio elegante e pequeno; envelopes hardcoded ("PoC do loop")</td></tr>
+<tr><td><code>Chatbot</code> / <code>Knowledge</code> / <code>Agents</code></td><td>RAG + GraphQL + MCP + agentes</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Embeddings são <code>HashingEmbedder</code> (sem semântica real); janela de sinais em memória</td></tr>
+<tr><td><code>Ai.*</code> (router + 3 workers)</td><td>Fila de jobs LLM/visão/embeddings, DLQ, retry</td><td><span class="badge b-wait">BLOQUEADO</span></td><td>Estrutura pronta; serving real aguarda GPU (Jetson); ledger de idempotência em memória</td></tr>
+<tr><td><code>Mes.Connector</code></td><td>Poll MES → normaliza → <code>mes.eventos.v1</code></td><td><span class="badge b-code">SÓ COMPILA</span></td><td>Só existe <code>SimulatorMesAdapter</code>; cursor em memória; falta no docker-compose</td></tr>
+<tr><td><code>Data.Archiver</code></td><td>Kafka → JSONL.gz → MinIO + OpenLineage</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Linhagem publicada no Kafka mas sem bridge → Marquez (elo solto)</td></tr>
+<tr><td><code>Platform.*</code></td><td>Contracts (Avro), AccessControl, ServiceDefaults, Audit</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Base compartilhada bem feita; codec executável dos schemas</td></tr>
+<tr><td><code>clients/</code> (PWA, desktop, mobile, obs)</td><td>PWA estática + shells Tauri</td><td><span class="badge b-code">MISTO</span></td><td>PWA ok; mobile aguarda Android SDK; PWA tenta WebSocket que não existe</td></tr>
+<tr><td><code>deploy/</code> (Helm, ArgoCD, Linkerd, Velero, DR…)</td><td>Cluster k3s completo declarado</td><td><span class="badge b-cfg">SÓ CONFIG</span></td><td>16 workloads declarados, nunca executados em cluster real</td></tr>
+</table>
+
+<!-- ============ MACRO ============ -->
+<h2>2 · Arquitetura macro <span class="tag">ponta a ponta — do sensor/clique ao banco</span></h2>
+<p class="lead">Dois fluxos de entrada (usuário e fábrica) convergem no mesmo Kafka; tudo emite telemetria pro mesmo OTel Collector.
+Caixas tracejadas vermelhas = elos quebrados hoje.</p>
+
+<div class="diagram">
+  <div class="lane">
+    <div class="lane-label">Cliente</div>
+    <div class="lane-body">
+      <div class="node n-client">PWA<small>login senha→TOTP · token em memória</small></div>
+      <span class="arrow">→</span>
+      <div class="node n-client">Shells Tauri<small>desktop OK · mobile aguarda SDK</small></div>
+      <span class="arrow">⇢</span>
+      <div class="node n-gap">WS /v1/linha/ws<small>PWA chama · backend NÃO existe</small></div>
+    </div>
+  </div>
+  <div class="lane">
+    <div class="lane-label">Acesso</div>
+    <div class="lane-body">
+      <div class="node n-access">WAF<small>NGINX + ModSecurity CRS</small></div>
+      <span class="arrow">→</span>
+      <div class="node n-access">Gateway YARP<small>JWT · RBAC/ABAC · rate limit · negado por padrão</small></div>
+      <span class="arrow">→</span>
+      <div class="node n-access">Identity<small>TOTP · JWT 5min · refresh rotativo</small></div>
+    </div>
+  </div>
+  <div class="lane">
+    <div class="lane-label">APIs</div>
+    <div class="lane-body">
+      <div class="node n-svc">Core.Execution<small>ordens + outbox transacional</small></div>
+      <div class="node n-svc">Chatbot<small>RAG + MCP · always_ask</small></div>
+      <div class="node n-svc">Knowledge<small>GraphQL · pgvector · Ishikawa 6M</small></div>
+      <div class="node n-svc">Agents<small>diagnóstico · relatório diário</small></div>
+    </div>
+  </div>
+  <div class="lane">
+    <div class="lane-label">Borda fabril</div>
+    <div class="lane-body">
+      <div class="node n-edge">Sensor / PLC</div>
+      <span class="arrow">→</span>
+      <div class="node n-edge">Mosquitto MQTT</div>
+      <span class="arrow">→</span>
+      <div class="node n-edge">Edge.ProtocolGateway<small>identidade X.509 · tradução · buffer (memória!)</small></div>
+      <span class="arrow">→</span>
+      <div class="node n-edge">MES Connector<small>só simulador · cursor em memória</small></div>
+    </div>
+  </div>
+  <div class="lane">
+    <div class="lane-label">Kafka</div>
+    <div class="lane-body">
+      <div class="node n-kafka">linha.telemetria.v1</div>
+      <div class="node n-kafka">linha.alertas.v1</div>
+      <div class="node n-kafka">core.eventos.v1</div>
+      <div class="node n-kafka">mes.eventos.v1</div>
+      <div class="node n-kafka">ai.jobs.* + DLQ</div>
+      <div class="node n-kafka">comandos propostos/aprovados</div>
+      <div class="node n-kafka">quarentena · auditoria · linhagem</div>
+    </div>
+  </div>
+  <div class="down-note">↓ consumidores (commit manual, at-least-once)</div>
+  <div class="lane">
+    <div class="lane-label">Processadores</div>
+    <div class="lane-body">
+      <div class="node n-svc">Telemetry.Ingest<small>faixa física + drift de relógio → aceita ou quarentena</small></div>
+      <div class="node n-svc">Predictive<small>EWMA/z-score → alerta</small></div>
+      <div class="node n-svc">Notifications<small>escada on-call → ntfy</small></div>
+      <div class="node n-svc">Decision.Engine<small>envelope → auto / humano / rejeita</small></div>
+      <div class="node n-ai">Ai.Router → LLM · Visão · Embeddings<small>idempotência por job-id · aguarda GPU</small></div>
+      <div class="node n-svc">Data.Archiver<small>JSONL.gz → MinIO</small></div>
+    </div>
+  </div>
+  <div class="lane">
+    <div class="lane-label">Dados</div>
+    <div class="lane-body">
+      <div class="node n-data">PostgreSQL + pgvector<small>operacional + RAG</small></div>
+      <div class="node n-data">Valkey<small>cache · rate limit</small></div>
+      <div class="node n-data">MinIO<small>data lake Hive-style</small></div>
+      <div class="node n-data">VictoriaMetrics<small>séries temporais</small></div>
+      <span class="arrow">⇢</span>
+      <div class="node n-gap">Marquez<small>UI ativa · sem bridge Kafka→API</small></div>
+    </div>
+  </div>
+  <div class="lane">
+    <div class="lane-label">Observab.</div>
+    <div class="lane-body">
+      <div class="node n-obs">Serilog + OTel em todo host</div>
+      <span class="arrow">→</span>
+      <div class="node n-obs">OTel Collector</div>
+      <span class="arrow">→</span>
+      <div class="node n-obs">Loki · Tempo · VictoriaMetrics</div>
+      <span class="arrow">→</span>
+      <div class="node n-obs">Grafana<small>correlação por trace_id</small></div>
+      <div class="node n-obs">Pyrra SLO · OpenCost · Uptime Kuma</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h4>✅ Garantias que o código realmente implementa</h4>
+    <table>
+      <tr><td>Outbox transacional</td><td><code>WorkOrderStore</code> grava agregado + evento na mesma transação</td></tr>
+      <tr><td>At-least-once controlado</td><td>auto-commit desligado; commit só após persistir/publicar</td></tr>
+      <tr><td>Idempotência de telemetria</td><td><code>(sensor_id, measured_at)</code> + <code>ON CONFLICT DO NOTHING</code></td></tr>
+      <tr><td>Falha explícita</td><td>quarentena, DLQ, pending humano, retry contado</td></tr>
+      <tr><td>Baseline protegido</td><td>anomalia não contamina a média do detector</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>⚠️ Elos declarados mas não fechados</h4>
+    <table>
+      <tr><td>WebSocket da linha</td><td>PWA chama, YARP não roteia, backend não existe</td></tr>
+      <tr><td>Linhagem → Marquez</td><td>evento vai pro Kafka, ninguém entrega ao Marquez</td></tr>
+      <tr><td>E-mail</td><td>canal existe, envio é só log estruturado</td></tr>
+      <tr><td>Serving de IA</td><td>contratos prontos, zero GPU disponível</td></tr>
+      <tr><td>Cluster k3s / DR</td><td>tudo declarado, nada executado</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ============ EPICOS ============ -->
+<h2>3 · Épicos SMT/SMD — o que a pesquisa precisa <span class="tag">issues #6–#11</span></h2>
+<p class="lead">O plano de retomada documentado: #7 → #8 → #9 → #10 → #11. Repare no padrão: <b>tudo que é pesquisa de verdade está bloqueado por dado externo.</b></p>
+<div class="epic-row">
+  <div class="epic-chip done"><b>#6 Conector MES ✓</b><small>domínio pronto · falta adapter real + cursor persistente</small></div>
+  <div class="epic-chip done"><b>#7 Ishikawa 6M ✓</b><small>classificador + seed · falta persistência pgvector + MCP</small></div>
+  <div class="epic-chip done"><b>#8 iDMSS ranking ✓</b><small>ranking baseline · Random Forest = peso 1.0 (não existe)</small></div>
+  <div class="epic-chip blocked"><b>#9 Visão SPI ✗</b><small>bloqueado: dataset rotulado + GPU + modelo</small></div>
+  <div class="epic-chip blocked"><b>#10 Inferência lógica ✗</b><small>bloqueado: elicitação de regras com a operação</small></div>
+  <div class="epic-chip blocked"><b>#11 Treino/MLflow ✗</b><small>bloqueado: dataset + necessidade de re-treino</small></div>
+</div>
+
+<!-- ============ PROBLEMAS ============ -->
+<h2>4 · Problemas encontrados <span class="tag">da leitura direta do código — não é a lista dos docs</span></h2>
+
+<h3>🔴 Críticos — segurança</h3>
+
+<div class="prob p-crit"><span class="sev s-crit">Crítico · segredo vazado</span>
+  <h4>Senha real commitada em texto plano num repositório público</h4>
+  <p>A senha <b><code>w1n•••••n</code></b> está no <code>docker-compose.yml</code> (<code>MINIO_ROOT_PASSWORD</code>, <code>GF_SECURITY_ADMIN_PASSWORD</code>)
+  e documentada em <code>docs/arquitetura.md</code> como credencial de <code>msuchoa</code>. O repo é público no GitHub. Mesmo sendo "dev",
+  se essa senha for reutilizada em qualquer serviço pessoal, ela está comprometida — histórico de git não esquece.</p>
+  <p class="where">docker-compose.yml:85-86, 264 · docs/arquitetura.md:281</p>
+</div>
+
+<div class="prob p-crit"><span class="sev s-crit">Crítico · autenticação</span>
+  <h4>Chave de assinatura JWT literal, duplicada em 3 serviços</h4>
+  <p><code>"dev-only-signing-key-with-32-bytes!!"</code> é o fallback em Gateway, Identity e Agents. Qualquer pessoa que leia o repo
+  consegue <b>forjar tokens de admin</b> em qualquer instância que suba sem configurar <code>Jwt:SigningKey</code>. O próprio doc de prontidão
+  reconhece; o CI deveria falhar hoje se detectar <code>dev-only-*</code> em ambiente Production — a regra está escrita mas não implementada.</p>
+  <p class="where">src/Identity/Identity.Api/TokenIssuer.cs:22 · Gateway.Host · Agents</p>
+</div>
+
+<div class="prob p-crit"><span class="sev s-crit">Crítico · autorização</span>
+  <h4>Endpoint administrativo sem autenticação</h4>
+  <p>Os endpoints admin do Identity operam com ator fixo <code>"system:dev"</code> em vez do token validado — ou seja, a trilha de auditoria
+  administrativa (o objetivo da issue #5) registra ações <b>sem saber quem as fez</b>, e o endpoint não está atrás do RBAC.</p>
+  <p class="where">src/Identity/Identity.Api/AdminEndpoints.cs (documentado em docs/prontidao-producao-industrial.md §1.1)</p>
+</div>
+
+<h3>🟠 Bugs de lógica no código</h3>
+
+<div class="prob p-logic"><span class="sev s-logic">Bug · cross-service</span>
+  <h4>Alerta do Predictive quebra a desserialização do Notifications (crash-loop potencial)</h4>
+  <p>O <code>ScoringLoop</code> publica <code>severity: "Warning"</code> como <b>string</b> num objeto anônimo. O <code>AlertConsumer</code> desserializa
+  para o enum <code>Severity</code> usando <code>JsonSerializerDefaults.Web</code> — que <b>não inclui</b> <code>JsonStringEnumConverter</code>. Resultado:
+  <code>JsonException</code> (não <code>null</code> — o guard de nulo nunca dispara), o worker morre sem commitar o offset, reinicia, relê a mesma
+  mensagem e morre de novo. Um único alerta de anomalia pode derrubar o pipeline de notificação em loop.</p>
+  <p class="where">src/Predictive/Predictive.Worker/ScoringLoop.cs:66-73 · src/Notifications/Notifications.Worker/AlertConsumer.cs:43,71</p>
+</div>
+
+<div class="prob p-logic"><span class="sev s-logic">Bug · detecção</span>
+  <h4>AnomalyDetector: sensor estável nunca dispara anomalia (divisão-por-zero silenciada)</h4>
+  <p>Se a variância é 0 (sensor flatline — comum em linha parada ou setpoint fixo), <code>z = 0</code> por definição no código
+  (<code>stdDev &gt; 0 ? deviation/stdDev : 0</code>). Quando o valor <b>salta</b>, o z-score é zerado, <code>isAnomaly = false</code>, e a média
+  <b>absorve o salto</b> — exatamente o "aprender o defeito" que o comentário do código diz evitar. O degrau mais óbvio de detectar é o único que nunca é detectado.
+  Além disso, sem re-baselining, um deslocamento legítimo de regime (troca de produto) gera <b>alarme perpétuo</b>.</p>
+  <p class="where">src/Predictive/Predictive.Domain/Scoring/AnomalyDetector.cs:31,35-40</p>
+</div>
+
+<div class="prob p-logic"><span class="sev s-logic">Bug · i18n</span>
+  <h4>IshikawaClassifier: tratamento de acentos inconsistente</h4>
+  <p>O par <code>estencil/estêncil</code> tem as duas grafias, mas <code>medicao</code> só tem a forma sem acento — o texto real
+  "falha de medição" cai em <code>Indefinida</code> (só salva se contiver "spi"/"aoi"/"calibr"). Sem normalização Unicode (remoção de diacríticos),
+  cada regra precisa listar todas as grafias — e a lista já falha nisso. Além do mais, a <b>ordem da lista decide a categoria</b> em texto composto:
+  "desgaste da pasta de solda" vira <i>Máquina</i> (desgaste vem antes), nunca <i>Material</i> — empate resolvido por acidente de ordenação, não por relevância.</p>
+  <p class="where">src/Knowledge/Knowledge.Domain/Ishikawa/IshikawaClassifier.cs:31,49-53</p>
+</div>
+
+<div class="prob p-logic"><span class="sev s-logic">Vazamento de memória</span>
+  <h4>Dicionários que só crescem: TokenIssuer, IdempotencyLedger, detectores por sensor</h4>
+  <p><code>TokenIssuer._familyOwner</code> nunca remove famílias expiradas (uma entrada por login, para sempre);
+  <code>IdempotencyLedger._jobs</code> guarda todo job <code>Done</code> eternamente; <code>ScoringLoop._detectors</code> cria um detector por
+  <code>sensor_id</code> sem eviction. Em dev não aparece; num worker de longa duração é OOM lento e silencioso.</p>
+  <p class="where">TokenIssuer.cs:19 · IdempotencyLedger.cs:18 · ScoringLoop.cs:15</p>
+</div>
+
+<div class="prob p-logic"><span class="sev s-logic">Fragilidade · contrato implícito</span>
+  <h4>Cursor MES comparado como string ordinal</h4>
+  <p><code>PollCursor</code> assume cursor "monotônico crescente, timestamp ISO ou id zero-padded, comparado ordinalmente" — mas <b>nenhum código valida</b> isso.
+  Um MES que emita id numérico sem padding (<code>"99"</code> &gt; <code>"100"</code> ordinalmente) silenciosamente <b>descarta eventos novos</b> como "já vistos".
+  A invariante "nunca perde" depende de uma convenção não verificada do adapter.</p>
+  <p class="where">src/Mes.Connector/Mes.Connector.Domain/PollCursor.cs:15-16,31</p>
+</div>
+
+<div class="prob p-logic"><span class="sev s-logic">Inconsistência · schema-first</span>
+  <h4>O tópico de alertas ignora o próprio contrato Avro do repo</h4>
+  <p>A regra nº 4 do README é "Schema primeiro" e existe <code>schemas/linha-alerta.avsc</code> — mas <code>linha.alertas.v1</code> trafega JSON
+  ad-hoc: um objeto anônimo no produtor e um record duplicado (<code>AlertMessage</code>) em <b>cada</b> consumidor (Notifications, Agents).
+  Três definições paralelas do mesmo evento, nenhuma validada contra o <code>.avsc</code>. É exatamente a deriva de contrato que a arquitetura promete impedir.</p>
+  <p class="where">schemas/linha-alerta.avsc · ScoringLoop.cs:66 · AlertConsumer.cs:8 · Agents/AlertIngestService.cs</p>
+</div>
+
+<h3>🟡 Estado em memória — "fase 0" que contradiz a promessa do bloco</h3>
+
+<div class="prob p-state"><span class="sev s-state">Design · durabilidade</span>
+  <h4>Cinco pontos onde a garantia anunciada morre com o processo</h4>
+  <p>① <b>Refresh tokens</b> em memória: restart do Identity desloga todo mundo e a "revogação de família" não vale entre réplicas.
+  ② <b>Buffer store-and-forward</b> da borda em memória: a única razão de existir desse buffer é sobreviver a queda — e ele não sobrevive.
+  ③ <b>Cursor MES</b>: restart re-polla tudo. ④ <b>Ledger de idempotência da IA</b>: por réplica, então com 2+ réplicas a idempotência simplesmente não existe.
+  ⑤ <b>Rate limiter local</b>: por réplica; o limite real vira N× o configurado.
+  Tudo está documentado como "fase 1" — o problema é que os diagramas e a tabela de status vendem essas garantias como presentes (<span class="badge b-ok">OK LOCAL</span>) sem o asterisco.</p>
+  <p class="where">TokenIssuer.cs · StoreAndForwardBuffer.cs · MesConnectorWorker.cs · IdempotencyLedger.cs · TokenBucket/ValkeyRateLimiter</p>
+</div>
+
+<h3>🔵 Problemas da ideia / escopo</h3>
+
+<div class="prob p-idea"><span class="sev s-idea">Estratégico · escopo</span>
+  <h4>Pirâmide invertida: infraestrutura enorme, núcleo de pesquisa raso</h4>
+  <p>O repo tem 16 serviços, 26 pipelines de CI, Helm + ArgoCD + Linkerd + Velero + MirrorMaker + Feast + MLflow + Marquez + OpenCost + Pyrra…
+  para um time de <b>4 pessoas</b>. Enquanto isso, o que as 3 dissertações de fato precisam entregar é hoje:
+  ranking = <code>ocorrências × 1.0</code> (o Random Forest não existe), classificação = ~21 palavras-chave,
+  embeddings = <i>feature hashing</i> sem semântica, visão = zero código de modelo. <b>Todo caminho crítico da pesquisa está bloqueado por dado externo</b>
+  (dataset SPI, rótulos do PIM, workshops de elicitação) — e nenhuma dessas dependências avança escrevendo mais YAML.
+  O risco real do projeto não é técnico: é gastar o cronograma do mestrado polindo plataforma e chegar na banca sem resultado de modelo.</p>
+</div>
+
+<div class="prob p-idea"><span class="sev s-idea">Estratégico · rótulo</span>
+  <h4>"XAI" está superdimensionado nos textos</h4>
+  <p>A "explicabilidade" atual é a string <code>"3× · peso 1.00"</code> e regras por substring. É um baseline honesto e defensável —
+  mas os docs o descrevem como "ranking explicável (XAI)" e "sistema especialista", o que cria expectativa de SHAP/LIME/regras encadeadas
+  que não existem. Numa banca, esse gap entre nomenclatura e implementação vira pergunta desconfortável.</p>
+</div>
+
+<div class="prob p-idea"><span class="sev s-idea">Prático · toolchain</span>
+  <h4>net10.0 + slnx: fricção de contribuição real</h4>
+  <p>O monorepo exige .NET 10 (esta máquina tem SDK 8 — nem compila) e usa formato <code>.slnx</code>. Para um projeto que depende de
+  colaboradores de mestrado com máquinas heterogêneas, o custo de entrada é alto e desnecessário — LTS (net8) faria o mesmo serviço.</p>
+</div>
+
+<h3>🟣 Problemas de documentação e diagramação</h3>
+
+<div class="prob p-doc"><span class="sev s-doc">Doc drift</span>
+  <h4>Números e diagramas desatualizados em relação ao código</h4>
+  <p>① <code>arquitetura.md</code> afirma "<b>Seis</b> schemas Avro versionados" — há <b>11</b> em <code>schemas/</code>.
+  ② O diagrama mermaid de tópicos não mostra <code>mes.eventos.v1</code>, Ishikawa nem o ranking iDMSS (entraram depois de 14/07, o doc diz "validado contra o código em 14/07" e não foi re-validado).
+  ③ Os KPIs do cabeçalho ("17 processos ativos, 24 serviços Compose, 32 monitores") descrevem <b>a máquina do autor num dia específico</b> — irreproduzível por quem clona o repo; "OK LOCAL" é um selo de confiança, não uma evidência verificável.</p>
+  <p class="where">docs/arquitetura.md:11,104 · schemas/ (11 arquivos)</p>
+</div>
+
+<div class="prob p-doc"><span class="sev s-doc">Diagramação</span>
+  <h4>Lacunas conhecidas ficam fora do diagrama principal</h4>
+  <p>O mapa de fluxo mostra o caminho feliz completo, e as lacunas (WebSocket fantasma, Marquez sem bridge, e-mail que é log) ficam numa
+  tabela separada no fim. Quem lê só o diagrama — orientador, banca, novo integrante — conclui que o fluxo fecha de ponta a ponta.
+  Diagrama honesto marca o elo quebrado <b>no próprio desenho</b> (como feito acima na seção 2).
+  Falta também um diagrama único "visão de pesquisa": qual serviço serve a qual dissertação — hoje isso está espalhado em 4 documentos.</p>
+</div>
+
+<!-- ============ RECOMENDACOES ============ -->
+<h2>5 · Recomendações em ordem de prioridade</h2>
+<ol class="reco">
+  <li><b>Trocar e expurgar a senha <code>w1n•••••n</code></b> <span>— trocar em qualquer lugar onde seja usada de verdade, substituir no compose por <code>.env</code> não versionado, e considerar reescrever o histórico (BFG/git-filter-repo) já que o repo é público.</span></li>
+  <li><b>Corrigir o bug do enum no pipeline de alertas</b> <span>— adicionar <code>JsonStringEnumConverter</code> (ou melhor: usar o codec Avro de <code>linha-alerta.avsc</code> nos dois lados) e embrulhar o consume em try/catch com quarentena. É o único bug que derruba serviço em runtime hoje.</span></li>
+  <li><b>Corrigir o caso stdDev=0 do AnomalyDetector</b> <span>— com variância zero e desvio não-nulo após warmup, marcar anomalia (ou usar um piso de variância). Adicionar teste: flatline + salto.</span></li>
+  <li><b>Normalizar diacríticos no IshikawaClassifier</b> <span>— <code>string.Normalize(FormD)</code> + strip de <code>NonSpacingMark</code> elimina a classe inteira de bugs de acento e reduz a lista de regras.</span></li>
+  <li><b>Congelar a expansão de infra e atacar o gargalo de dados</b> <span>— o cronograma do mestrado depende de dataset SPI, rótulos do PIM e workshops Ishikawa. Essas frentes têm lead time longo e não dependem de código: iniciar já.</span></li>
+  <li><b>Persistir os 3 estados que invalidam garantias anunciadas</b> <span>— cursor MES (uma tabela), ledger de IA (<code>SET NX</code> no Valkey), buffer da borda (arquivo). São pequenos e fecham a distância entre o que o diagrama promete e o que o código faz.</span></li>
+  <li><b>Re-validar e datar os docs, ou remover os selos</b> <span>— "OK LOCAL" e os KPIs deveriam sair de um script (<code>make evidencia</code>) que qualquer um roda, não de uma sessão manual. Corrigir "seis schemas" → 11 e incluir MES/Ishikawa/iDMSS no mermaid.</span></li>
+  <li><b>Implementar o gate de CI anti-<code>dev-only-*</code></b> <span>— a regra já está escrita no doc de prontidão; é um grep no pipeline.</span></li>
+</ol>
+
+<p class="footnote">Gerado por análise estática do clone local (commit 9223571, 17/07/2026). A suíte de testes não pôde ser executada nesta máquina:
+o monorepo exige .NET 10 e o SDK instalado é 8.0.413 — os achados de lógica vêm de leitura de código, não de execução.</p>
+
+</div>
+</body>
+</html>
