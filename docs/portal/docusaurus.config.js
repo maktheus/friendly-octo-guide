@@ -1,5 +1,5 @@
-// Portal de docs da plataforma. As páginas vêm de docs/ (arquitetura, governança)
-// — fonte única, versionada com o código. `npm start` sobe em :3000 (compose
+﻿// Portal de docs da plataforma. As pÃ¡ginas vÃªm de docs/ (arquitetura, governanÃ§a)
+// â€” fonte Ãºnica, versionada com o cÃ³digo. `npm start` sobe em :3000 (compose
 // docs-portal, perfil plataforma-eng).
 // @ts-check
 
@@ -8,11 +8,11 @@ const githubPages = process.env.GITHUB_PAGES === 'true';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Plataforma de Linha',
-  tagline: 'Arquitetura, governança e operação — fonte única',
+  tagline: 'Arquitetura, governanÃ§a e operaÃ§Ã£o â€” fonte Ãºnica',
   favicon: 'img/favicon.ico',
   url: process.env.DOCUSAURUS_URL || 'http://localhost:3003',
   baseUrl: process.env.DOCUSAURUS_BASE_URL || '/',
-  organizationName: 'stpedr',
+  organizationName: 'maktheus',
   projectName: 'friendly-octo-guide',
   deploymentBranch: 'gh-pages',
   trailingSlash: false,
@@ -26,7 +26,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          // Reaproveita os docs do repo: nada de duplicar arquitetura/governança.
+          // Reaproveita os docs do repo: nada de duplicar arquitetura/governanÃ§a.
           path: process.env.DOCUSAURUS_DOCS_PATH || '../',
           include: ['arquitetura.md', 'mapa-implementacao.md', 'governanca/**/*.md'],
           routeBasePath: 'docs',
@@ -48,7 +48,7 @@ const config = {
           : []),
       ],
     },
-    footer: { style: 'dark', copyright: 'Plataforma de Linha — docs internos' },
+    footer: { style: 'dark', copyright: 'Plataforma de Linha â€” docs internos' },
   },
 };
 

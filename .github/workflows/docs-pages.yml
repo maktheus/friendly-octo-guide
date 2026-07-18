@@ -33,7 +33,7 @@ jobs:
         working-directory: docs/portal
         env:
           GITHUB_PAGES: 'true'
-          DOCUSAURUS_URL: https://stpedr.github.io
+          DOCUSAURUS_URL: https://maktheus.github.io
           DOCUSAURUS_BASE_URL: /friendly-octo-guide/
         run: npm run build
       - uses: actions/upload-pages-artifact@v3

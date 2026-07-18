@@ -7,7 +7,7 @@ description: Arquitetura executável da plataforma de linha, ligada diretamente 
 ---
 
 <header className="architecture-masthead">
-  <div className="architecture-eyebrow">Arquitetura viva · validada contra o código em 14/07/2026</div>
+  <div className="architecture-eyebrow">Arquitetura viva · validada contra o código em 17/07/2026</div>
   <h1>Observabilidade de ponta a ponta, do clique do usuário ao registro no banco</h1>
   <div className="architecture-lede">
     O fluxo implementado começa na <strong>PWA com login em duas etapas</strong>, atravessa o
@@ -92,16 +92,17 @@ description: Arquitetura executável da plataforma de linha, ligada diretamente 
 | Core.Execution | <span className="status status-local">OK LOCAL</span> | Máquina de estados de ordem; agregado e outbox gravados na mesma transação; relay idempotente para Kafka. | `src/Core.Execution/` |
 | Edge.ProtocolGateway | <span className="status status-local">OK LOCAL</span> | Assina `linha/+/sensor/+`, traduz payload, valida identidade do dispositivo, usa buffer store-and-forward e produz Avro. | `src/Edge.ProtocolGateway/` |
 | Quality gate | <span className="status status-local">OK LOCAL</span> | Valida faixa física, drift de relógio e staleness; aceita em Postgres ou publica em quarentena com motivo. | `src/Telemetry.Ingest/` |
-| Predictive | <span className="status status-local">OK LOCAL</span> | EWMA/z-score online, warmup, baseline protegido contra anomalia, monitor de drift e publicação de alerta. | `src/Predictive/` |
+| Predictive | <span className="status status-local">OK LOCAL</span> | EWMA/z-score online, warmup, baseline protegido contra anomalia, monitor de drift, publicação de alerta e ranking de diagnóstico explicável do iDMSS (épico #8, peso do RF pendente). | `src/Predictive/` |
 | Notifications | <span className="status status-local">OK LOCAL</span> | Consome alertas com commit manual, decide escala on-call e envia push ntfy. E-mail ainda é log estruturado. | `src/Notifications/` |
 | Decision Engine | <span className="status status-local">OK LOCAL</span> | Envelope operacional, degrau máximo, criticidade e aprovação humana; todo desfecho gera auditoria com trace-id. | `src/Decision.Engine/` |
 | Chatbot/MCP | <span className="status status-local">OK LOCAL</span> | RAG com visibilidade RBAC, REST e servidor MCP na mesma API, ferramentas destrutivas com `always_ask`. | `src/Chatbot/` |
-| Knowledge | <span className="status status-local">OK LOCAL</span> | HotChocolate GraphQL autenticado, chunking, embeddings, JSONB, pgvector/HNSW e filtro de visibilidade na query. | `src/Knowledge/` |
+| Knowledge | <span className="status status-local">OK LOCAL</span> | HotChocolate GraphQL autenticado, chunking, embeddings, JSONB, pgvector/HNSW, filtro de visibilidade na query e base de causa raiz Ishikawa 6M (classificador + seed, épico #7). | `src/Knowledge/` |
+| Conector MES | <span className="status status-code">OK CÓDIGO</span> | Poll genérico com cursor idempotente, normalização e quarentena → `mes.eventos.v1`; hoje só o `SimulatorMesAdapter` (adapter REST/SQL real e cursor persistente pendentes, épico #6). | `src/Mes.Connector/` |
 | Agents | <span className="status status-local">OK LOCAL</span> | Janela de sinais, diagnóstico de incidente, relatório diário no Kafka e proposta de ação protegida. | `src/Agents/` |
 | IA assíncrona | <span className="status status-code">OK PROCESSOS</span> | Router por tipo, três workers, ledger idempotente, retry via tópico raiz e DLQ após limite de tentativas. | `src/Ai/` |
 | Serving de IA | <span className="status status-wait">AGUARDA GPU</span> | Contratos HTTP OpenAI-compatible prontos; `llama.cpp` para Nano e vLLM para Orin declarados no deploy Jetson. | `deploy/jetson/` |
 | Data lake | <span className="status status-local">OK LOCAL</span> | Lê Kafka por partição, compacta JSONL.gz, grava no MinIO com chave Hive-style e emite OpenLineage. | `src/Data.Archiver/` |
-| Contratos | <span className="status status-local">OK LOCAL</span> | Seis schemas Avro versionados; codec binário executável; Apicurio registra os artefatos de forma idempotente. | `schemas/`, `src/Platform/Platform.Contracts/` |
+| Contratos | <span className="status status-local">OK LOCAL</span> | Onze schemas Avro versionados; codec binário executável; Apicurio registra os artefatos de forma idempotente. | `schemas/`, `src/Platform/Platform.Contracts/` |
 | Observabilidade | <span className="status status-local">OK LOCAL</span> | Serilog + OTel em todos os hosts; Collector separa logs→Loki, traces→Tempo e métricas→VictoriaMetrics; Grafana correlaciona por `trace_id`. | `src/Platform/Platform.ServiceDefaults/`, `deploy/observability/` |
 | SLO/FinOps/status | <span className="status status-local">OK LOCAL</span> | Pyrra lê SLOs versionados, OpenCost usa a API Prometheus e Uptime Kuma executa 32 verificações. | `deploy/observability/slo/`, `docker-compose.yml` |
 | GitOps e autoscale | <span className="status status-config">OK CONFIG</span> | Chart com namespaces, resources, HPA e KEDA por lag; ArgoCD com sync, prune e self-heal. | `deploy/helm/`, `deploy/argocd/` |
@@ -136,6 +137,10 @@ flowchart LR
   ALERTS --> AGENT["agents"] --> REPORT[("relatorios.diarios.v1")]
   TELEMETRY --> ARCH["data-archiver"] --> MINIO[("MinIO / JSONL.gz")]
   ARCH --> LINEAGE[("linhagem.openlineage.v1")]
+
+  MES["MES real (pendente)<br/>· SimulatorMesAdapter"] --> MESCON["mes-connector<br/>cursor idempotente"]
+  MESCON -->|"normaliza · Avro"| MESEVT[("mes.eventos.v1")]
+  MESCON -->|"rejeita + reason"| MESQUAR[("mes.eventos.quarentena.v1")]
 
   CORE["Core.Execution"] -->|"outbox transacional"| COREEVT[("core.eventos.v1")]
   ALERTS --> KSQL["ksqlDB · janela 10 min"] --> STORM[("linha.alertas.tempestade.v1")]

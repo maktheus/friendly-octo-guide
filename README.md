@@ -55,6 +55,10 @@ plataforma-linha/
 docker compose up -d          # Kafka, Postgres, Valkey, MinIO, MQTT + espinha de observabilidade
 dotnet test                   # suíte completa (rápida — só Domain tem lógica)
 
+# obrigatório pra rodar local: sem isso os hosts que assinam/validam JWT falham no
+# boot de propósito (a chave de dev só vale em Development — fora dela, OpenBao).
+export ASPNETCORE_ENVIRONMENT=Development
+
 # suba o que for exercitar:
 dotnet run --project src/Identity/Identity.Api                          # :5000 — /v1/auth
 dotnet run --project src/Gateway/Gateway.Host                           # borda
@@ -70,8 +74,9 @@ python3 -m http.server 8081 -d clients/pwa
 Grafana em `http://localhost:3000` (Loki + Tempo + VictoriaMetrics provisionados);
 push de alerta em `http://localhost:8090` (ntfy).
 
-Usuários dev: `admin/admin-dev` e `operador/operador-dev` — provisionamento do
-authenticator em `GET /v1/auth/totp/provision/{username}`.
+Usuários dev (seed em `Identity.Api/UserStore.cs`): `msuchoa/w1ntersun` (admin) e
+`operador/operador-dev` — provisionamento do authenticator em
+`GET /v1/auth/totp/provision/{username}`.
 
 > Versões de pacote nos `.csproj` são as vigentes na criação do scaffold — rode
 > `dotnet list package --outdated` na primeira semana e fixe as atuais.

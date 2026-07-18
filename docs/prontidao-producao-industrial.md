@@ -21,8 +21,8 @@ O scaffold foi construído com atalhos de dev deliberados, marcados no código c
 | Estado atual (dev) | Exigência de produção | Onde |
 |---|---|---|
 | `InMemoryUserStore` (usuários fixos em memória) | **Keycloak** como fonte da verdade (OIDC + TOTP + RBAC/ABAC); Identity valida, não guarda usuário | `Identity.Api`, `deploy/raspberry/keycloak` |
-| Chave JWT `"dev-only-signing-key…"` literal em 3 serviços | Chave de assinatura do **OpenBao** (rotação); nunca literal | `Gateway`, `Identity/TokenIssuer`, `Agents/Program` |
-| Endpoint admin sem auth (`"system:dev"` como ator) | Ator do **token validado** injetado pelo Gateway; endpoint atrás do RBAC `admin` | `Identity.Api/AdminEndpoints.cs` |
+| ~~Chave JWT literal em 5 serviços~~ **FEITO 17/07**: `PlatformSecrets.JwtSigningKey` centraliza; fallback de dev só em `Development`, fora dele o boot **falha** sem chave do OpenBao | Rotação da chave no OpenBao (a resolução já exige ele fora de dev) | `Platform.ServiceDefaults/PlatformSecrets.cs` |
+| ~~Endpoint admin sem auth~~ **FEITO 17/07**: `/v1/admin` exige token com papel `admin` validado no próprio Identity; ator da auditoria = `sub` do token (o fallback `system:dev` virou exceção) | — | `Identity.Api/AdminEndpoints.cs`, `Identity.Api/Program.cs` |
 | Segredos com fallback pra env/config | **OpenBao + External Secrets** obrigatório; sem fallback em prod | `Platform.ServiceDefaults/PlatformSecrets.cs` |
 | TOTP provisionado pelo Identity (dev) | QR pelo **Account Console do Keycloak** | `Identity.Api/AuthEndpoints.cs` |
 
