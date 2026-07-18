@@ -10,7 +10,9 @@ TestResults/
 # Tauri (clients/desktop)
 clients/desktop/src-tauri/target/
 clients/observability/src-tauri/target/
-clients/desktop/src-tauri/gen/
+# gen/android é versionado (projeto Gradle do shell mobile); o .gitignore interno
+# dele exclui build/, .gradle e jniLibs. gen/apple entra quando houver macOS.
+clients/desktop/src-tauri/gen/apple/
 coverage.json
 
 # Pact contracts gerados (publicados no broker no CI, não versionados)
