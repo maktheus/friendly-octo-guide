@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Knowledge.Domain.Chunking;
 using Knowledge.Domain.Embeddings;
+using Knowledge.Domain.Inferencia;
 using Knowledge.Domain.Ishikawa;
 
 namespace Knowledge.Api;
@@ -41,6 +42,29 @@ public sealed class Query
         ArgumentException.ThrowIfNullOrWhiteSpace(sintoma);
         var embedding = await embedder.EmbedAsync(sintoma, ct);
         return await causas.SearchAsync(embedding, ativoId, Math.Clamp(limit, 1, 20), ct);
+    }
+
+    /// <summary>
+    /// Inferência lógica (épico #10): encadeia regras interpretáveis sobre os sintomas
+    /// observados — semente SMT + a base de causa raiz do ativo virando regra em
+    /// runtime (sintoma → causa, com a confiança curada). Toda conclusão vem com a
+    /// cadeia completa que a explica.
+    /// </summary>
+    public async Task<IReadOnlyList<Conclusao>> InferirCausas(
+        IReadOnlyList<string> sintomas, string? ativoId,
+        CausaRaizStore causas, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(sintomas);
+
+        var regras = new List<Regra>(MotorInferencia.RegrasSemente);
+        if (!string.IsNullOrWhiteSpace(ativoId))
+        {
+            foreach (var causa in await causas.QueryAsync(ativoId, categoria: null, limit: 100, ct))
+                regras.Add(new Regra(causa.Sintoma, causa.Causa, causa.Confianca,
+                    $"base de causa raiz de {causa.AtivoId} ({causa.Categoria})"));
+        }
+
+        return MotorInferencia.Encadear(sintomas, regras);
     }
 
     internal static List<string> RolesOf(ClaimsPrincipal user) =>

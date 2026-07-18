@@ -1,8 +1,10 @@
 # Estado da execução das propostas SMT/SMD — pronto vs. a implementar
 
-**Handoff — 2026-07-16.** Onde a execução parou e o que falta, com detalhe pra
-retomar e **validar depois** (a pedido: implementar num segundo momento). Complementa
-o [plano](./plano-execucao-propostas-smt.md) e a [prontidão](./prontidao-propostas-smt.md).
+**Handoff — 2026-07-16, retomado e executado em 2026-07-18.** Tudo que não dependia
+de dado/GPU externo foi implementado E validado rodando (marcas **FEITO 18/07** por
+seção); o que resta está bloqueado por dataset do PIM, imagens SPI ou elicitação com
+a operação. Complementa o [plano](./plano-execucao-propostas-smt.md) e a
+[prontidão](./prontidao-propostas-smt.md).
 
 ## Leia isto primeiro: "verde no CI" ≠ "validado rodando"
 
@@ -66,27 +68,39 @@ Commits: `267fffb` (MES), `6e3f373` (Ishikawa), `f7d0582` (iDMSS + seed).
   (`pesoModelo` no `IdmssDiagnosis.Rank`); treinar/servir depende do dataset
   rotulado de falhas do PIM (→ #11).
 
-### #9 Hallyson — visão em SPI (caminho de imagem)
-- **`schemas/inspecao-smt.avsc`**: resultado de inspeção com `image_ref` (ponteiro
-  MinIO, imagem não inline), veredito, tipo de defeito, parâmetros.
-- **Ingestão de imagem**: uploader/edge grava no MinIO + emite o evento.
-- **`Ai.Worker.Vision`**: contrato de inferência (defeito + **XAI**: explicação +
-  confiança). Modelo servido estático — candidatos: ViT / CNN / MambaVision / YOLOv5.
-- **Ligação Ishikawa**: defeito → categoria (ex.: desgaste de estêncil = *Máquina*).
-- **Validar**: precisa de GPU + modelo + imagens.
-- **Bloqueio externo**: dataset SPI rotulado + modelo treinado.
+### #9 Hallyson — visão em SPI (caminho de imagem) — **CONTRATO FEITO 18/07**
+- **`schemas/inspecao-smt.avsc` + `InspecaoSmtCodec`** (Platform.Contracts):
+  resultado de inspeção com `image_ref` (ponteiro MinIO, imagem NUNCA inline),
+  veredito (Suspeito = revisão humana obrigatória), tipo de defeito, parâmetros.
+  Invariante executável: **inferência de modelo sem explicação (XAI) é payload
+  inválido** — o codec recusa.
+- **Ligação Ishikawa**: `DefeitoSmt.Map` (Knowledge.Domain) — mapa curado
+  defeito→categoria 6M com racional visível; fora do mapa cai no classificador
+  por palavra; desconhecido é Indefinida pedindo elicitação, nunca inventa.
+- **`Ai.Worker.Vision`**: contrato de inferência repassa `confidence` +
+  `explanation` do serving (XAI de ponta a ponta).
+- **Pendente (bloqueado)**: uploader de imagem no edge, modelo treinado
+  (ViT/CNN/MambaVision/YOLOv5) e validação com GPU — dataset SPI rotulado.
 
-### #10 Jeymerson — inferência lógica (sistema especialista)
-- **Motor de inferência** sobre a base Ishikawa: regras interpretáveis (XAI),
-  complementando o RAG do LLM. A semente já existe (`IshikawaClassifier` é regra por
-  palavra-chave); estender pra encadeamento de regras causa→efeito.
-- **Agente de conhecimento** + relatório diário da linha.
-- **Visibilidade/transparência**: reuso da observabilidade (acatech 3–4), sem obra nova.
-- **Bloqueio externo**: elicitação das regras com a operação.
+### #10 Jeymerson — inferência lógica (sistema especialista) — **MOTOR FEITO 18/07**
+- **`MotorInferencia`** (Knowledge.Domain): encadeamento pra frente sobre regras
+  causa→efeito interpretáveis; confiança propaga por **produto** (cadeia longa
+  confia menos), ciclo não trava, e toda conclusão carrega a **cadeia completa**
+  que a explica (XAI) — o complemento simbólico do RAG.
+- **Regras semente SMT** (defeito → causa física → contramedida) + exposição
+  GraphQL `inferirCausas(sintomas, ativoId)`: a base de causa raiz do épico #7
+  vira regra em runtime (sintoma → causa com a confiança curada).
+- **Relatório diário**: já existia no Agents (DailyReportService) — reuso, sem obra.
+- **Bloqueio externo que segue**: elicitação das regras reais com a operação
+  (as sementes são o ponto de partida do workshop).
 
-### #11 Treino/registro (fase 2 da plataforma)
-- **Feast** (features) + **MLflow** (versionamento) p/ o RF (#8) e a visão (#9).
-- **Bloqueio externo**: dataset + necessidade de re-treino contínuo.
+### #11 Treino/registro (fase 2 da plataforma) — **BLOQUEADO (dado)**
+- Infra pronta e parada à espera de dataset: MLflow no compose (:5500) com
+  `MlflowClient`/`ModelBootstrap` no Predictive, diretório `ml/feast`, e os pontos
+  de plug já expostos (#8: `pesoModelo` no `IdmssDiagnosis.Rank`; #9: serving de
+  visão com contrato XAI).
+- **Bloqueio externo**: dataset rotulado do PIM (RF) e imagens SPI rotuladas
+  (visão). Sem dado, treinar aqui seria teatro — este épico só destrava em campo.
 
 ## Ordem sugerida de retomada
 
