@@ -32,8 +32,14 @@ cargo tauri ios build
 ## Build no Windows (validado em 17/07/2026)
 
 `gen/android` está gerado e commitado; um `app-arm64-debug.apk` já foi produzido
-com SDK 36 + NDK 27.2 + Rust host `x86_64-pc-windows-gnu`. Três armadilhas
-específicas do Windows, todas contornáveis:
+com SDK 36 + NDK 27.2 + Rust host `x86_64-pc-windows-gnu`.
+
+> **Atenção: o APK compilou mas NÃO foi validado rodando** — nenhuma instalação
+> em aparelho ou emulador foi feita (mesma régua "verde ≠ validado" dos docs de
+> execução). Validar = `adb install` + abrir + logar contra um Gateway acessível
+> pela rede do aparelho.
+
+Três armadilhas específicas do Windows, todas contornáveis:
 
 1. **Host GNU precisa do binutils MinGW real no PATH** (`dlltool.exe` + `as.exe`)
    para os crates raw-dylib (windows-sys etc.). O `dlltool` self-contained do
@@ -49,8 +55,10 @@ específicas do Windows, todas contornáveis:
 
 ## Pendente
 
+- **Validar o APK em aparelho/emulador** (instalar, abrir, logar) — o build
+  passou, o runtime não foi exercitado.
 - `ios init` (exige macOS + Xcode).
-- Assinatura de release (hoje o artefato validado é o APK debug).
+- Assinatura de release (hoje o artefato existente é o APK debug, não validado).
 - Mobile não tem shell pra `PLATAFORMA_GATEWAY_URL`: precisa de uma tela de
   configuração no primeiro uso (mesmo pendente anotado no README do desktop).
 - Push nativo do alerta (ntfy) e desbloqueio via TOTP local — ver arquitetura,
