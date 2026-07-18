@@ -45,9 +45,20 @@ public sealed class VisionProcessor(HttpClient http, IConfiguration config) : IJ
 
         var result = await response.Content.ReadFromJsonAsync<VisionResult>(JsonOpts, ct)
             ?? throw new InvalidOperationException("Endpoint de visão devolveu corpo vazio.");
-        return new { request.Task, text = result.Text, labels = result.Labels ?? [] };
+
+        // XAI é contrato, não cortesia (épico #9): classificação de defeito sem
+        // explicação não entra na linha — o resultado carrega o porquê e a confiança.
+        return new
+        {
+            request.Task,
+            text = result.Text,
+            labels = result.Labels ?? [],
+            confidence = result.Confidence,
+            explanation = result.Explanation,
+        };
     }
 
     private sealed record VisionRequest(string Task, string ImageUrl);
-    private sealed record VisionResult(string? Text, IReadOnlyList<string>? Labels);
+    private sealed record VisionResult(
+        string? Text, IReadOnlyList<string>? Labels, double? Confidence = null, string? Explanation = null);
 }

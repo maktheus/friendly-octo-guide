@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "InspecaoSmt",
+  "namespace": "linha.inspecao.v1",
+  "doc": "Resultado de inspeção SMT (SPI/AOI) — épico #9. A imagem NUNCA vai inline: image_ref é a chave do objeto no MinIO/data lake (caminho de imagem separado do caminho de evento). Veredito da máquina de inspeção OU do modelo servido (campo modelo preenchido = inferência, com explicação XAI e confiança). Encoding JSON na fase 0. Compatibilidade BACKWARD obrigatória — campo novo sempre com default.",
+  "fields": [
+    { "name": "inspecao_id", "type": { "type": "string", "logicalType": "uuid" } },
+    { "name": "ativo_id", "type": "string", "doc": "Nó da árvore ISA-95 (a linha/estação inspecionada)." },
+    { "name": "estagio", "type": { "type": "enum", "name": "EstagioInspecao", "symbols": ["Spi", "Aoi"] }, "doc": "SPI = pós-impressão de pasta; AOI = pós-reflow." },
+    { "name": "veredito", "type": { "type": "enum", "name": "VereditoInspecao", "symbols": ["Aprovado", "Reprovado", "Suspeito"] }, "doc": "Suspeito = revisão humana obrigatória (o modelo nunca reprova sozinho placa limítrofe)." },
+    { "name": "tipo_defeito", "type": ["null", "string"], "default": null, "doc": "Código do defeito quando reprovado/suspeito: SOLDER-BRIDGE, INSUFFICIENT-PASTE, EXCESS-PASTE, MISALIGNMENT, TOMBSTONE…" },
+    { "name": "image_ref", "type": ["null", "string"], "default": null, "doc": "Chave do objeto de imagem no lake (s3://bucket/chave) — ponteiro, nunca bytes." },
+    { "name": "parametros", "type": ["null", "string"], "default": null, "doc": "JSON com as medições do estágio (altura/área/volume de pasta no SPI; offset no AOI)." },
+    { "name": "modelo", "type": ["null", "string"], "default": null, "doc": "Modelo/versão que inferiu (ex.: vit-spi@1.2). Null = veredito da própria máquina de inspeção." },
+    { "name": "confianca", "type": "double", "default": 1.0, "doc": "0..1. Máquina de inspeção = 1.0; modelo servido reporta a própria confiança." },
+    { "name": "explicacao", "type": ["null", "string"], "default": null, "doc": "XAI: por que o modelo decidiu (região/atributo dominante). Obrigatória quando modelo != null — inferência sem explicação não entra na linha." },
+    { "name": "occurred_at", "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "clock_source", "type": "int", "default": 0, "doc": "0=Unknown,1=Ntp,2=Ptp,3=Unsynced — mesma semântica de sensor-reading." }
+  ]
+}

@@ -49,6 +49,22 @@ public class ProcessorTests
     }
 
     [Fact]
+    public async Task Vision_classificacao_repassa_confianca_e_explicacao_do_serving()
+    {
+        // XAI é contrato (épico #9): o resultado carrega o porquê e a confiança do modelo.
+        var proc = new VisionProcessor(Client((_, _) =>
+            Json("""{"text":null,"labels":["SOLDER-BRIDGE"],"confidence":0.87,"explanation":"continuidade de pasta no pad 14"}""")), Cfg());
+
+        var result = await proc.ProcessAsync(
+            Job("""{"task":"classify","imageUrl":"s3://lake/inspecao/placa-4471.png"}"""), default);
+
+        var json = System.Text.Json.JsonSerializer.Serialize(result);
+        Assert.Contains("SOLDER-BRIDGE", json, StringComparison.Ordinal);
+        Assert.Contains("0.87", json, StringComparison.Ordinal);
+        Assert.Contains("pad 14", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Vision_payload_malformado_falha_para_o_loop_reencaminhar()
     {
         var proc = new VisionProcessor(Client((_, _) => Json("{}")), Cfg());

@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IsPackable>false</IsPackable>
-    <!-- Contratos consumidor-dirigidos (Pact): não medimos cobertura de linha aqui. -->
+    <!-- Contratos consumidor-dirigidos (Pact): nÃ£o medimos cobertura de linha aqui. -->
     <CollectCoverage>false</CollectCoverage>
   </PropertyGroup>
   <ItemGroup>
@@ -9,5 +9,8 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
     <PackageReference Include="PactNet" Version="5.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Platform/Platform.Contracts/Platform.Contracts.csproj" />
   </ItemGroup>
 </Project>
