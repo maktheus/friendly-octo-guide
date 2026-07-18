@@ -59,9 +59,12 @@ else
     builder.Services.AddSingleton<IEmbedder>(new HashingEmbedder(dimensions));
 }
 
+// Mesmo default dos demais serviços (compose: db linha, dev/dev) — o default antigo
+// (plataforma/knowledge) não existia em lugar nenhum e quebrava o boot local.
 var connectionString = builder.Configuration.GetConnectionString("Postgres")
-    ?? "Host=localhost;Username=plataforma;Password=plataforma;Database=knowledge";
+    ?? "Host=localhost;Database=linha;Username=dev;Password=dev";
 builder.Services.AddSingleton(new KnowledgeStore(connectionString, dimensions));
+builder.Services.AddSingleton(new CausaRaizStore(connectionString, dimensions));
 
 // A exigência de auth fica no endpoint (RequireAuthorization no MapGraphQL) —
 // cobre o schema inteiro sem precisar do pacote de autorização por campo.
@@ -79,5 +82,36 @@ app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
 app.MapGraphQL("/v1/knowledge/graphql").RequireAuthorization();
 
 await app.Services.GetRequiredService<KnowledgeStore>().EnsureSchemaAsync(CancellationToken.None);
+
+// Épico #7: a base de causa raiz nasce semeada com os motivos de parada do OEE
+// (config Ishikawa:Sintomas, formato "MOTIVO|texto do sintoma"; defaults SMT/SMD).
+// Seed é hipótese (confiança 0.3) e NUNCA sobrescreve registro curado — idempotente.
+var causaRaizStore = app.Services.GetRequiredService<CausaRaizStore>();
+await causaRaizStore.EnsureSchemaAsync(CancellationToken.None);
+
+var seedAtivo = app.Configuration["Ishikawa:AtivoId"] ?? "linha-2";
+var sintomasConfig = app.Configuration.GetSection("Ishikawa:Sintomas").Get<string[]>() ??
+[
+    "OEE-STENCIL|Desgaste de estêncil na impressora de pasta",
+    "OEE-NOZZLE|Entupimento de nozzle no pick-and-place",
+    "OEE-PASTA|Pasta de solda fora da janela de uso",
+    "OEE-SPI|Reprovação em série na medição do SPI",
+    "OEE-AOI|Falso-positivo recorrente no AOI",
+    "OEE-UMID|Umidade fora da faixa na sala SMT",
+    "OEE-SETUP|Setup de receita errado na troca de produto",
+    "OEE-TREINO|Operador sem treinamento no posto do turno",
+];
+
+var seedEmbedder = app.Services.GetRequiredService<IEmbedder>();
+var seed = Knowledge.Domain.Ishikawa.CausaRaizSeed.FromSintomas(
+    sintomasConfig.Select(s => s.Split('|', 2) is [var motivo, var texto]
+        ? (Sintoma: texto, MotivoCodigo: (string?)motivo)
+        : (Sintoma: s, MotivoCodigo: null)),
+    seedAtivo, DateTimeOffset.UtcNow, Guid.NewGuid);
+foreach (var causa in seed)
+{
+    var embedding = await seedEmbedder.EmbedAsync(causa.Sintoma, CancellationToken.None);
+    await causaRaizStore.UpsertAsync(causa, embedding, curada: false, CancellationToken.None);
+}
 
 app.Run();

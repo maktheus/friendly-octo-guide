@@ -75,6 +75,39 @@ public sealed class PlataformaTools(
         return await response.Content.ReadAsStringAsync(ct);
     }
 
+    [McpServerTool(Name = "consultar_causa_raiz")]
+    [Description("Diagnóstico Ishikawa 6M: dado um sintoma (parada, defeito), devolve as causas raiz mais prováveis da base de conhecimento, com categoria, confiança e score de similaridade.")]
+    public async Task<string> ConsultarCausaRaizAsync(
+        [Description("Sintoma observado (ex.: 'ponte de solda recorrente na linha 2')")] string sintoma,
+        [Description("Id do ativo/linha pra restringir (opcional; vazio busca em todos)")] string? ativoId,
+        CancellationToken ct)
+    {
+        Authorize("consultar_causa_raiz", humanConfirmed: false);
+
+        var client = httpFactory.CreateClient("knowledge");
+        var bearer = httpContext.HttpContext?.Request.Headers.Authorization.ToString();
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            new Uri("/v1/knowledge/graphql", UriKind.Relative));
+        if (!string.IsNullOrEmpty(bearer))
+            request.Headers.TryAddWithoutValidation("Authorization", bearer);
+        request.Content = JsonContent.Create(new
+        {
+            query = """
+                query($s:String!, $a:String) {
+                  diagnosticoPorSintoma(sintoma:$s, ativoId:$a, limit:5) {
+                    score
+                    causa { ativoId categoria sintoma causa motivoCodigo confianca }
+                  }
+                }
+                """,
+            variables = new { s = sintoma, a = string.IsNullOrWhiteSpace(ativoId) ? null : ativoId },
+        });
+
+        var response = await client.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(ct);
+    }
+
     // O agente nunca passa por cima do guardrail: negação vira exceção MCP visível no trace.
     private void Authorize(string tool, bool humanConfirmed)
     {

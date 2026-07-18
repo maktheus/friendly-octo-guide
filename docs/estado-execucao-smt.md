@@ -36,14 +36,20 @@ Commits: `267fffb` (MES), `6e3f373` (Ishikawa), `f7d0582` (iDMSS + seed).
 - **Validar**: subir compose (Kafka), rodar o worker, ver evento em `mes.eventos.v1`.
 - **Bloqueio externo**: endpoint/credencial do MES real.
 
-### #7 Ishikawa — persistência + exposição (2º push)
-- **`KnowledgeStore`**: tabela `causa_raiz` (estruturada, p/ inferência) + índice
-  **pgvector** (p/ RAG). Upsert + consulta por `ativo_id`/categoria.
-- **GraphQL** (HotChocolate) e **ferramenta MCP** pros agentes consultarem pelo
-  contrato auditado.
-- **Seed real**: ligar `CausaRaizSeed` aos `motivo_codigo` do OEE no boot.
-- **Validar**: pgvector no compose, semear, consultar por ativo.
-- **Bloqueio externo**: conhecimento tácito (workshops de Ishikawa com a operação).
+### #7 Ishikawa — persistência + exposição (2º push) — **FEITO 18/07**
+- ~~KnowledgeStore~~ **`CausaRaizStore`** (`Knowledge.Api`): tabela `causa_raiz`
+  estruturada + embedding pgvector/HNSW; upsert idempotente por `(ativo_id, sintoma)`
+  em que **curadoria vence hipótese** (seed nunca rebaixa confiança validada).
+- **GraphQL**: `causasRaiz(ativoId, categoria)`, `diagnosticoPorSintoma(sintoma)`
+  (semântica) e mutation `registrarCausaRaiz` (caminho da elicitação).
+- **MCP**: ferramenta `consultar_causa_raiz` no Chatbot, leitura sob RBAC de linha.
+- **Seed no boot**: `Ishikawa:Sintomas` ("MOTIVO|texto"; defaults SMT) →
+  `CausaRaizSeed` → banco, idempotente.
+- **Validado rodando**: E2E com login TOTP → GraphQL (401 sem token), 8 causas
+  semeadas, curadoria via mutation e diagnóstico semântico devolvendo a causa
+  curada; + 3 testes de integração live contra pgvector real.
+- **Bloqueio externo que segue**: conhecimento tácito (workshops de Ishikawa com a
+  operação) pra substituir as hipóteses por causas reais.
 
 ### #8 iDMSS Victor — camada de interface (agente)
 - **Agente iDMSS**: costurar `Chatbot` (interface) + `Decision.Engine` (guardrails,

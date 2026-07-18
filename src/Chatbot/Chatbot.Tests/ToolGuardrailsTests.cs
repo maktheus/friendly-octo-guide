@@ -29,6 +29,16 @@ public class ToolGuardrailsTests
     }
 
     [Fact]
+    public void Registro_default_expoe_consulta_de_causa_raiz_como_leitura_de_operador()
+    {
+        // Épico #7: o agente consulta a base Ishikawa pelo contrato auditado — leitura,
+        // dentro do RBAC de linha, sem exigir confirmação humana.
+        Assert.Equal(ToolAccess.Allowed,
+            Chatbot.Api.ToolRegistry.Default()
+                .Evaluate("consultar_causa_raiz", Operador(), humanConfirmed: false));
+    }
+
+    [Fact]
     public void Acao_destrutiva_sem_confirmacao_humana_e_barrada()
     {
         // permission policy always_ask: o agente NUNCA aborta ordem sozinho.
