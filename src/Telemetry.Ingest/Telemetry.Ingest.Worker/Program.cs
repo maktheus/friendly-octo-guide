@@ -3,14 +3,16 @@ using System.Diagnostics.Metrics;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Platform.ServiceDefaults;
 using Serilog;
 using Telemetry.Ingest.Worker;
 
 // Template de host do monorepo: todo serviço nasce com log estruturado,
 // traces e métricas apontando pro OTel Collector — a "espinha" recebe
-// desde o primeiro deploy, sem exceção.
+// desde o primeiro deploy, sem exceção. Host web (não worker puro) porque o
+// painel ao vivo da PWA conecta aqui: /v1/linha/ws via Gateway.
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSerilog(cfg => cfg
     .ReadFrom.Configuration(builder.Configuration)
@@ -27,11 +29,32 @@ builder.Services.AddOpenTelemetry()
         .AddRuntimeInstrumentation()
         .AddOtlpExporter());
 
+// O hub valida o token do painel com a mesma chave do Identity (fallback de dev
+// só em Development — fora dele o boot falha sem OpenBao, como nos outros hosts).
+builder.Configuration["Jwt:SigningKey"] = PlatformSecrets.JwtSigningKey(builder.Configuration, builder.Environment);
+
 builder.Services.AddSingleton(IngestOptions.From(builder.Configuration));
 builder.Services.AddSingleton<ReadingSink>();
+builder.Services.AddSingleton<LineFeedHub>();
 builder.Services.AddHostedService<IngestConsumer>();
+builder.Services.AddHostedService<LineFeedBroadcaster>();
 
-await builder.Build().RunAsync();
+var app = builder.Build();
+
+app.UseWebSockets();
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+app.Map("/v1/linha/ws", async context =>
+{
+    if (!context.WebSockets.IsWebSocketRequest)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        return;
+    }
+
+    await context.RequestServices.GetRequiredService<LineFeedHub>().HandleAsync(context);
+});
+
+await app.RunAsync();
 
 namespace Telemetry.Ingest.Worker
 {

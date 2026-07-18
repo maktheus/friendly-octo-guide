@@ -122,7 +122,8 @@ O Gateway só encaminha prefixos presentes simultaneamente na configuração YAR
 | `/v1/agents/**` | Agents | `operador` ou `admin` | diagnóstico, relatório e proposta de ação |
 | `/rum` | Gateway | Pública, payload limitado | histograma `client.rum.duration` |
 | `/healthz` | Cada host HTTP | Pública | liveness sintético |
-| `/v1/linha/**` | Sem cluster YARP hoje | <span className="status status-gap">LACUNA</span> | a política autoriza e a PWA tenta `/v1/linha/ws`, mas não há backend WebSocket mapeado |
+| `/v1/linha/ws` | Telemetry.Ingest | Pública na borda (browser não envia header no upgrade); o hub valida o JWT do **primeiro frame** + papel antes de transmitir | painel ao vivo: feed espelha `linha.telemetria.v1` |
+| `/v1/linha/**` (demais) | Telemetry.Ingest | `operador` ou `admin` | reservado; hoje só o WS existe |
 
 ## Tópicos Kafka e garantias
 
@@ -339,7 +340,7 @@ e os segredos chegam por External Secrets, não pelo `values.yaml`.
 
 | Item | Estado atual | Para fechar |
 |---|---|---|
-| WebSocket da linha | <span className="status status-gap">LACUNA</span> A PWA abre `/v1/linha/ws`, mas o YARP não possui rota/cluster nem há host WebSocket no monorepo. | Implementar o hub/bridge de telemetria e mapear a rota no Gateway. |
+| WebSocket da linha | <span className="status status-code">FEITO 18/07</span> Hub no Telemetry.Ingest (`LineFeedHub` + broadcaster com grupo efêmero), rota/cluster `linha` no YARP; credencial no primeiro frame, validada no hub. | Validar em cluster (Service criado; falta exercitar no k3s). |
 | Marquez ingest | <span className="status status-gap">LACUNA</span> Data.Archiver publica `linhagem.openlineage.v1`; Marquez API/UI estão ativos, porém não existe bridge Kafka→OpenLineage HTTP. | Adicionar consumer que poste os `RunEvent` no endpoint Marquez. |
 | E-mail real | <span className="status status-gap">FASE ATUAL</span> O canal e-mail gera log estruturado; ntfy é o envio real. | Integrar relay SMTP interno mantendo a mesma interface `EmailSender`. |
 | Idempotência IA distribuída | <span className="status status-gap">FASE ATUAL</span> Ledger é em memória por processo. | Trocar por `Valkey SET NX` com TTL para múltiplas réplicas. |

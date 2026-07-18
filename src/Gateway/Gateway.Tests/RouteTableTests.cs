@@ -12,7 +12,8 @@ public class RouteTableTests
         .Require("/v1/core/admin", RouteRequirement.ForRoles("admin"))
         .Require("/v1/linha", new RouteRequirement(
             new HashSet<string> { "operador" },
-            new Dictionary<string, string> { ["linha"] = "*" }));
+            new Dictionary<string, string> { ["linha"] = "*" }))
+        .Public("/v1/linha/ws"); // upgrade WS: browser não manda header; o hub valida o 1º frame
 
     [Fact]
     public void Rota_nao_listada_e_negada_por_padrao()
@@ -48,6 +49,23 @@ public class RouteTableTests
     public void Match_e_indiferente_a_barras_e_caixa()
     {
         var match = Table.Match("V1/CORE/");
+        Assert.True(match.IsListed);
+        Assert.False(match.IsPublic);
+    }
+
+    [Fact]
+    public void Upgrade_do_websocket_do_painel_e_publico_na_borda()
+    {
+        // O browser não envia Authorization no upgrade; a credencial vai no primeiro
+        // frame e o hub valida. A borda só encaminha ESTE caminho — o resto de
+        // /v1/linha continua exigindo papel.
+        Assert.True(Table.Match("/v1/linha/ws").IsPublic);
+    }
+
+    [Fact]
+    public void Resto_de_linha_continua_exigindo_papel()
+    {
+        var match = Table.Match("/v1/linha/historico");
         Assert.True(match.IsListed);
         Assert.False(match.IsPublic);
     }

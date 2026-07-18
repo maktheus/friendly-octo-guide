@@ -87,7 +87,11 @@ builder.Services.AddSingleton(new RouteTable()
     .Require("/v1/agents", RouteRequirement.ForRoles("operador", "admin"))
     .Require("/v1/linha", new RouteRequirement(
         new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "operador", "admin" },
-        new Dictionary<string, string>())));
+        new Dictionary<string, string>()))
+    // Upgrade de WebSocket do painel: o browser NÃO envia Authorization no upgrade,
+    // então a borda só encaminha; a credencial vai no PRIMEIRO frame e é o hub do
+    // telemetry-ingest quem valida assinatura + papel antes de transmitir qualquer byte.
+    .Public("/v1/linha/ws"));
 
 // Deprecação de API versionada (RFC 8594): rota antiga anuncia Sunset ANTES de sumir.
 // Sem entradas por padrão — preenchida quando uma v1 ganhar sucessora v2.

@@ -14,15 +14,28 @@ spec:
       containers:
         - name: telemetry-ingest
           image: harbor.interno/plataforma/telemetry-ingest:latest
+          ports: [{ containerPort: 8080 }]   # /healthz + /v1/linha/ws (painel ao vivo)
           env:
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://otel-collector.observabilidade:4317
             - name: Kafka__Bootstrap
               value: kafka.transporte:9092
-            # ConnectionStrings__Postgres: OpenBao via External Secrets.
+            # ConnectionStrings__Postgres e Jwt__SigningKey: OpenBao via External Secrets.
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
           resources:
             requests: { cpu: 100m, memory: 128Mi }
             limits: { memory: 256Mi }
+---
+# O Gateway (cluster YARP "linha") encaminha o upgrade de WebSocket pra cá.
+apiVersion: v1
+kind: Service
+metadata:
+  name: telemetry-ingest
+  namespace: linha
+spec:
+  selector: { app: telemetry-ingest }
+  ports: [{ port: 8080, targetPort: 8080 }]
 ---
 # Backpressure vira escala: buffer da borda enche → lag cresce → KEDA adiciona
 # consumidor — nunca descarta.
