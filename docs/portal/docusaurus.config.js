@@ -1,4 +1,4 @@
-﻿// Portal de docs da plataforma. As pÃ¡ginas vÃªm de docs/ (arquitetura, governanÃ§a)
+// Portal de docs da plataforma. As pÃ¡ginas vÃªm de docs/ (arquitetura, governanÃ§a)
 // â€” fonte Ãºnica, versionada com o cÃ³digo. `npm start` sobe em :3000 (compose
 // docs-portal, perfil plataforma-eng).
 // @ts-check
@@ -42,6 +42,7 @@ const config = {
       title: 'Plataforma de Linha',
       items: [
         { to: '/docs/arquitetura', label: 'Arquitetura', position: 'left' },
+        { href: '/diagrama-arquitetura.html', label: '📊 Diagrama Interativo', position: 'left' },
         { to: '/docs/mapa-implementacao', label: 'Mapa completo', position: 'left' },
         ...(githubPages
           ? [{ href: 'https://github.com/stpedr/friendly-octo-guide', label: 'GitHub', position: 'right' }]

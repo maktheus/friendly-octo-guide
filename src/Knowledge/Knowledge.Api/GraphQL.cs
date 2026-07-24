@@ -67,6 +67,18 @@ public sealed class Query
         return MotorInferencia.Encadear(sintomas, regras);
     }
 
+    /// <summary>
+    /// Avaliação dedutiva Ishikawa 6M (Épico #10 - Jeymerson): avalia fatos da fábrica
+    /// contra o conjunto de regras Ishikawa padrão ou customizadas da linha.
+    /// </summary>
+    public IReadOnlyList<Knowledge.Domain.Rules.DiagnosticoIshikawa> AvaliarRegrasIshikawa(
+        IReadOnlyList<string> fatosObservados)
+    {
+        ArgumentNullException.ThrowIfNull(fatosObservados);
+        return Knowledge.Domain.Rules.IshikawaRuleEngine.Avaliar(
+            fatosObservados, Knowledge.Domain.Rules.IshikawaRuleEngine.RegrasPadrao);
+    }
+
     internal static List<string> RolesOf(ClaimsPrincipal user) =>
         [.. user.Claims.Where(c => c.Type is "role" or ClaimTypes.Role).Select(c => c.Value)];
 }

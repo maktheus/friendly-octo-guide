@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Mes.Connector.Domain;
 
 namespace Mes.Connector.Worker;
@@ -37,7 +38,7 @@ public sealed partial class MesConnectorWorker(
             {
                 break;
             }
-            catch (Exception e) when (e is HttpRequestException or FormatException or TaskCanceledException)
+            catch (Exception e) when (e is HttpRequestException or FormatException or TaskCanceledException or DbException)
             {
                 LogPollFailed(e);
                 await Task.Delay(options.PollInterval, stoppingToken);

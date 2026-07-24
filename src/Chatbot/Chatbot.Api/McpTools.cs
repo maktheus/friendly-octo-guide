@@ -130,6 +130,37 @@ public sealed class PlataformaTools(
         return await response.Content.ReadAsStringAsync(ct);
     }
 
+    [McpServerTool(Name = "avaliar_regras_ishikawa")]
+    [Description("Inferência Lógica Ishikawa 6M (Épico #10): avalia um conjunto de fatos observados na linha SMT contra as regras de causa raiz e devolve as hipóteses deduzidas com explicação auditável.")]
+    public async Task<string> AvaliarRegrasIshikawaAsync(
+        [Description("Lista de fatos observados (ex.: 'SPI_Volume_Baixo', 'SOLDER-BRIDGE-RISK')")] IReadOnlyList<string> fatos,
+        CancellationToken ct)
+    {
+        Authorize("avaliar_regras_ishikawa", humanConfirmed: false);
+
+        var client = httpFactory.CreateClient("knowledge");
+        var bearer = httpContext.HttpContext?.Request.Headers.Authorization.ToString();
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            new Uri("/v1/knowledge/graphql", UriKind.Relative));
+        if (!string.IsNullOrEmpty(bearer))
+            request.Headers.TryAddWithoutValidation("Authorization", bearer);
+        request.Content = JsonContent.Create(new
+        {
+            query = """
+                query($f:[String!]!) {
+                  avaliarRegrasIshikawa(fatosObservados:$f) {
+                    ruleId categoria causaRaiz acaoRecomendada confiancaFinal fatosSatisfeitos racionalExplicativo
+                  }
+                }
+                """,
+            variables = new { f = fatos },
+        });
+
+        var response = await client.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(ct);
+    }
+
     // O agente nunca passa por cima do guardrail: negação vira exceção MCP visível no trace.
     private void Authorize(string tool, bool humanConfirmed)
     {

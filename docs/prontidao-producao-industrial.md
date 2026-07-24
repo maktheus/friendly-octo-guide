@@ -29,8 +29,8 @@ O scaffold foi construído com atalhos de dev deliberados, marcados no código c
 ### 1.2 Estado durável (em memória → sobrevive a restart e vale entre réplicas)
 | Estado atual (dev) | Exigência de produção | Onde |
 |---|---|---|
-| Cursor de polling do MES em memória | Persistir (Postgres/Valkey) — restart não re-polla | `Mes.Connector` |
-| `IdempotencyLedger` em memória (por réplica) | **Valkey `SET NX`** — idempotência entre réplicas | `Ai.Worker.Shared/AiJobLoop`, `Ai.Worker.Llm` |
+| ~~Cursor de polling do MES em memória~~ **FEITO**: `PostgresCursorStore` | Persistir (Postgres/Valkey) — restart não re-polla | `Mes.Connector` |
+| ~~`IdempotencyLedger` em memória (por réplica)~~ **FEITO 23/07**: `ValkeyIdempotencyLedger` | **Valkey `SET NX`** — idempotência entre réplicas com fallback em memória | `Ai.Worker.Shared/ValkeyIdempotencyLedger.cs`, `AiJobLoop` |
 | `SignalWindow` de correlação em memória | Materializar do **TSDB/Big Data Pool** | `Agents.Api/SignalWindow.cs` |
 | `StoreAndForwardBuffer` de estado em memória | Estado em **arquivo/disco** na borda (store-and-forward real) | `Edge.ProtocolGateway/…/Buffering` |
 | Rate limiter local por réplica | **Valkey** (token bucket distribuído) obrigatório com >1 réplica | `Gateway.Host/ValkeyRateLimiter.cs` |
@@ -49,7 +49,7 @@ O scaffold foi construído com atalhos de dev deliberados, marcados no código c
 | `HashingEmbedder` (feature hashing, sem semântica) | **Embeddings reais** (modelo servido no GPU pool) | `Knowledge.Domain/Embeddings` |
 | Modelos servidos estáticos / baseline | **MLflow** (versão/rollout) + serving real | Épico #11 |
 | Codecs "sem Schema Registry (fase 0)" | **Apicurio Schema Registry** com compat BACKWARD no CI | `Platform.Contracts`, `deploy/infra/register-schemas.sh` |
-| `SimulatorMesAdapter` | **`RestMesAdapter`/`SqlMesAdapter`** contra o MES real | `Mes.Connector` |
+| ~~`SimulatorMesAdapter`~~ **FEITO 23/07**: `RestMesAdapter` + `SqlMesAdapter` | **`RestMesAdapter`/`SqlMesAdapter`** contra o MES real (REST/SQL) | `Mes.Connector` |
 
 **Regra de aceite:** um serviço só é "pronto pra fábrica" quando **nenhum** dos seus
 itens acima está no estado de dev. O CI deve, idealmente, **falhar** se detectar chave

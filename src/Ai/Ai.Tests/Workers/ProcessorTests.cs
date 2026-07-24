@@ -72,7 +72,7 @@ public class ProcessorTests
     }
 
     [Fact]
-    public async Task Vision_consome_o_topico_de_visao()
+    public void Vision_consome_o_topico_de_visao()
     {
         var proc = new VisionProcessor(Client((_, _) => Json("{}")), Cfg());
         Assert.Equal("ai.jobs.vision.v1", proc.JobsTopic);

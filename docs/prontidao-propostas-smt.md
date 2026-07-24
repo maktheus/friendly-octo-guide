@@ -80,10 +80,7 @@ acatech (trace-id ponta a ponta, linhagem, painel ao vivo). O que falta é a
 
 Um padrão claro: **os furos se repetem**. Resolver os transversais destrava os três.
 
-1. **Conector MES/SCADA (gap #1, comum aos três).** Hoje o edge fala o chão de
-   fábrica (OPC-UA/Modbus/MQTT, níveis Purdue 0–2). Os três dependem de **MES**
-   (nível 3/4) — ordens, apontamentos, rastreabilidade. É uma integração nova,
-   adjacente ao `Edge.ProtocolGateway`, e é o maior denominador comum.
+1. **Conector MES/SCADA (FEITO 23/07).** Implementado o `Mes.Connector` com suporte a `RestMesAdapter` (APIs REST) e `SqlMesAdapter` (visões SQL parametrizadas via Dapper/SqlClient/Npgsql) + `PostgresCursorStore`. Atende ordens, apontamentos e rastreabilidade dos três mestrandos.
 
 2. **Base de causa raiz / Ishikawa (2 de 3).** Cabe no `Knowledge` (pgvector),
    e **conecta com o que já foi construído**: o schema `parada-linha.avsc`
@@ -108,7 +105,7 @@ Um padrão claro: **os furos se repetem**. Resolver os transversais destrava os 
 | Bloco necessário | Hallyson | Victor | Jeymerson |
 |---|:---:|:---:|:---:|
 | Ingestão chão de fábrica (edge) | 🟡 imagem | ✅ SCADA | ✅ automação |
-| Conector MES | — | 🟡 | 🟡 |
+| Conector MES | — | ✅ | ✅ |
 | IA (visão / ML / agentes) | 🟡 visão | 🟡 RF | ✅ agentes/RAG |
 | Decisão com guardrails | ✅ | ✅ | ✅ |
 | Conhecimento / Ishikawa | — | 🟡 | 🟡 |

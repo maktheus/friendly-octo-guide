@@ -97,7 +97,7 @@ description: Arquitetura executável da plataforma de linha, ligada diretamente 
 | Decision Engine | <span className="status status-local">OK LOCAL</span> | Envelope operacional, degrau máximo, criticidade e aprovação humana; todo desfecho gera auditoria com trace-id. | `src/Decision.Engine/` |
 | Chatbot/MCP | <span className="status status-local">OK LOCAL</span> | RAG com visibilidade RBAC, REST e servidor MCP na mesma API, ferramentas destrutivas com `always_ask`. | `src/Chatbot/` |
 | Knowledge | <span className="status status-local">OK LOCAL</span> | HotChocolate GraphQL autenticado, chunking, embeddings, JSONB, pgvector/HNSW, filtro de visibilidade na query e base de causa raiz Ishikawa 6M (classificador + seed, épico #7). | `src/Knowledge/` |
-| Conector MES | <span className="status status-code">OK CÓDIGO</span> | Poll genérico com cursor idempotente, normalização e quarentena → `mes.eventos.v1`; hoje só o `SimulatorMesAdapter` (adapter REST/SQL real e cursor persistente pendentes, épico #6). | `src/Mes.Connector/` |
+| Conector MES | <span className="status status-code">FEITO 23/07</span> | Poll com cursor idempotente, normalização e quarentena → `mes.eventos.v1`. Suporta REST (`RestMesAdapter`), consultas SQL parametrizadas (`SqlMesAdapter` via Dapper/SqlClient/Npgsql) e simulador dev (`SimulatorMesAdapter`). | `src/Mes.Connector/` |
 | Agents | <span className="status status-local">OK LOCAL</span> | Janela de sinais, diagnóstico de incidente, relatório diário no Kafka e proposta de ação protegida. | `src/Agents/` |
 | IA assíncrona | <span className="status status-code">OK PROCESSOS</span> | Router por tipo, três workers, ledger idempotente, retry via tópico raiz e DLQ após limite de tentativas. | `src/Ai/` |
 | Serving de IA | <span className="status status-wait">AGUARDA GPU</span> | Contratos HTTP OpenAI-compatible prontos; `llama.cpp` para Nano e vLLM para Orin declarados no deploy Jetson. | `deploy/jetson/` |
@@ -169,7 +169,7 @@ flowchart LR
 | **At-least-once controlado** | Consumers desativam auto-commit e confirmam só após persistir, publicar ou reenfileirar. |
 | **Outbox transacional** | `WorkOrderStore` grava estado e evento na mesma transação PostgreSQL; `OutboxRelay` publica depois. |
 | **Idempotência de telemetria** | Chave `(sensor_id, measured_at)` e `ON CONFLICT DO NOTHING`. |
-| **Idempotência de IA** | `IdempotencyLedger` impede resultado duplicado por `job-id`; em cluster o próximo passo é `SET NX` no Valkey. |
+| **Idempotência de IA** | `ValkeyIdempotencyLedger` impede resultado duplicado por `job-id` via `SET NX` com TTL no Valkey; degrada com segurança para `InMemoryIdempotencyLedger`. |
 | **Falha explícita** | Quarentena para telemetria, DLQ para IA, pending para decisão humana e métricas para outbox/ingest. |
 | **Contrato versionado** | `.avsc` no repositório, codec em `Platform.Contracts` e publicação no Apicurio. |
 
@@ -343,7 +343,7 @@ e os segredos chegam por External Secrets, não pelo `values.yaml`.
 | WebSocket da linha | <span className="status status-code">FEITO 18/07</span> Hub no Telemetry.Ingest (`LineFeedHub` + broadcaster com grupo efêmero), rota/cluster `linha` no YARP; credencial no primeiro frame, validada no hub. | Validar em cluster (Service criado; falta exercitar no k3s). |
 | Marquez ingest | <span className="status status-code">FEITO 18/07</span> `LineageBridge` no Data.Archiver consome o tópico e entrega no `POST /api/v1/lineage` (liga com `Marquez:BaseUrl`); teto anti-veneno pra evento que o Marquez nunca aceita. Facets corrigidos pro spec (`_producer`/`_schemaURL`, `dataSource.uri`) — sem eles o Marquez recusa (422) ou quebra (500/NPE). | Validado local: dataset do lake visível no grafo. |
 | E-mail real | <span className="status status-code">FEITO 18/07</span> `EmailSender` envia via SMTP quando `Smtp:Host` está configurado (Mailpit no compose; relay corporativo em prod); sem config, segue o log da fase 0. | Validado local: alerta Critical entregue no Mailpit. |
-| Idempotência IA distribuída | <span className="status status-gap">FASE ATUAL</span> Ledger é em memória por processo. | Trocar por `Valkey SET NX` com TTL para múltiplas réplicas. |
+| Idempotência IA distribuída | <span className="status status-code">FEITO 23/07</span> `ValkeyIdempotencyLedger` implementado via `SET NX` com TTL (30 min em voo / 24h concluído) e fallback gracioso em memória. | Validado local: 22 testes em `Ai.Tests` cobrindo trava e degradação. |
 | LLM/visão/embeddings reais | <span className="status status-wait">AGUARDA GPU</span> Workers estão vivos, mas o serving precisa da Jetson. | Subir um dos perfis em `deploy/jetson/` e apontar as três URLs. |
 | Mobile | <span className="status status-wait">AGUARDA SDK</span> Arquitetura e shell estão documentados, sem APK/IPA gerado aqui. | Instalar SDK/NDK, inicializar o target Tauri Mobile e assinar o artefato. |
 | Cluster/DR cross-region | <span className="status status-config">OK CONFIG</span> Scripts, manifests e runbook estão prontos; não há segunda região nesta estação. | Executar bootstrap dos nós, game day e medir RPO/RTO real. |

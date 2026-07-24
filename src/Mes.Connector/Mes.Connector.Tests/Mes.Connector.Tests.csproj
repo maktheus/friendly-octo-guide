@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Mes.Connector.Domain/Mes.Connector.Domain.csproj" />
+    <ProjectReference Include="../Mes.Connector.Worker/Mes.Connector.Worker.csproj" />
     <ProjectReference Include="../../Platform/Platform.Contracts/Platform.Contracts.csproj" />
   </ItemGroup>
 </Project>

@@ -38,8 +38,11 @@ if (!string.IsNullOrEmpty(pgConn))
 else
     builder.Services.AddSingleton<ICursorStore, InMemoryCursorStore>();
 
-// Adapter: Mes:Rest:BaseUrl liga o MES real via REST; sem ela, simulador de dev.
+// Adapter: Mes:Rest:BaseUrl liga o MES real via REST; Mes:Sql:ConnectionString via SQL;
+// sem elas, simulador de dev.
 var mesRestBaseUrl = builder.Configuration["Mes:Rest:BaseUrl"];
+var mesSqlConnStr = builder.Configuration.GetConnectionString("MesSql") ?? builder.Configuration["Mes:Sql:ConnectionString"];
+
 if (!string.IsNullOrEmpty(mesRestBaseUrl))
 {
     builder.Services.AddHttpClient<IMesAdapter, RestMesAdapter>(c =>
@@ -49,6 +52,12 @@ if (!string.IsNullOrEmpty(mesRestBaseUrl))
         if (builder.Configuration["Mes:Rest:ApiKey"] is { Length: > 0 } apiKey)
             c.DefaultRequestHeaders.Add("X-Api-Key", apiKey); // em prod a chave vem do OpenBao
     });
+}
+else if (!string.IsNullOrEmpty(mesSqlConnStr))
+{
+    var providerName = builder.Configuration["Mes:Sql:ProviderName"];
+    var query = builder.Configuration["Mes:Sql:Query"];
+    builder.Services.AddSingleton<IMesAdapter>(new SqlMesAdapter(mesSqlConnStr, providerName, query));
 }
 else
 {

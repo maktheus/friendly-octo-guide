@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TECEMI 4.0 — Topologia Visual de Conexões e Fluxo de Dados</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg-main: #06090e;
+    --bg-surface: #0e141d;
+    --bg-card: rgba(18, 26, 38, 0.85);
+    --border-color: rgba(255, 255, 255, 0.1);
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    /* Protocol Colors */
+    --p-kafka: #10b981;    /* Emerald - PubSub */
+    --p-http: #38bdf8;     /* Cyan - REST/GraphQL */
+    --p-sql: #a855f7;      /* Purple - Postgres/SQL */
+    --p-valkey: #f59e0b;   /* Amber - Cache/Locks */
+    --p-industrial: #f43f5e;/* Rose - MQTT/Modbus */
+    --p-otlp: #eab308;     /* Yellow - Telemetry/Lineage */
+
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-heading: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  header.topo-header {
+    background: radial-gradient(circle at 50% -30%, rgba(56, 189, 248, 0.15), transparent 70%), var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    padding: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .header-wrap {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand-icon {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, var(--p-kafka), var(--p-http));
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 20px;
+    color: #fff;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .brand-title h1 {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(to right, #fff, var(--p-http));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .brand-title p {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+  }
+
+  /* Protocol Legend Bar */
+  .legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: rgba(0,0,0,0.3);
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  /* Canvas Container */
+  .canvas-container {
+    max-width: 1600px;
+    margin: 24px auto;
+    padding: 0 24px 60px;
+    position: relative;
+  }
+
+  /* Interactive Controls */
+  .canvas-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .tool-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .tool-btn:hover {
+    border-color: var(--p-http);
+    color: var(--p-http);
+  }
+
+  /* SVG Topology Stage */
+  .stage-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 980px;
+    background: radial-gradient(circle at 50% 50%, rgba(14, 20, 29, 0.8), var(--bg-main));
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  }
+
+  svg.connections-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Connection Line Styles & Animated Dashes */
+  .wire-line {
+    fill: none;
+    stroke-width: 2.5;
+    opacity: 0.45;
+    transition: var(--transition);
+    stroke-linecap: round;
+  }
+
+  .wire-line.animated {
+    stroke-dasharray: 8 6;
+    animation: dashFlow 25s linear infinite;
+  }
+
+  @keyframes dashFlow {
+    from { stroke-dashoffset: 1000; }
+    to { stroke-dashoffset: 0; }
+  }
+
+  .wire-line.highlighted {
+    stroke-width: 4;
+    opacity: 1 !important;
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+
+  .wire-line.dimmed {
+    opacity: 0.08 !important;
+  }
+
+  /* Nodes Layout Grid in Topology */
+  .nodes-layer {
+    position: relative;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px 30px;
+    padding: 40px 30px;
+    min-height: 980px;
+  }
+
+  @media (max-width: 1200px) {
+    .nodes-layer { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Topology Node Cards */
+  .topo-node {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    backdrop-filter: blur(12px);
+    transition: var(--transition);
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  }
+
+  .topo-node:hover {
+    transform: translateY(-4px) scale(1.02);
+    border-color: var(--p-http);
+    box-shadow: 0 12px 30px rgba(56, 189, 248, 0.25);
+    z-index: 30;
+  }
+
+  .topo-node.active-focus {
+    border-color: var(--p-kafka);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+  }
+
+  .topo-node.dimmed-node {
+    opacity: 0.2;
+  }
+
+  .node-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .node-title-text {
+    font-family: var(--font-heading);
+    font-size: 14.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .port-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.08);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+
+  .node-body-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .connection-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .conn-chip {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .conn-chip.c-kafka { background: rgba(16, 185, 129, 0.15); color: var(--p-kafka); border: 1px solid var(--p-kafka); }
+  .conn-chip.c-http { background: rgba(56, 189, 248, 0.15); color: var(--p-http); border: 1px solid var(--p-http); }
+  .conn-chip.c-sql { background: rgba(168, 85, 247, 0.15); color: var(--p-sql); border: 1px solid var(--p-sql); }
+  .conn-chip.c-valkey { background: rgba(245, 158, 11, 0.15); color: var(--p-valkey); border: 1px solid var(--p-valkey); }
+  .conn-chip.c-ind { background: rgba(244, 63, 94, 0.15); color: var(--p-industrial); border: 1px solid var(--p-industrial); }
+
+  /* Info Modal / Drawer */
+  .node-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(8px);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition);
+  }
+
+  .node-modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .node-modal-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    max-width: 600px;
+    width: 100%;
+    padding: 28px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: relative;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-close:hover { border-color: var(--p-industrial); color: var(--p-industrial); }
+
+</style>
+</head>
+<body>
+
+<!-- Top Navigation & Legend -->
+<header class="topo-header">
+  <div class="header-wrap">
+    <div class="brand-group">
+      <div class="brand-icon">⚡</div>
+      <div class="brand-title">
+        <h1>TECEMI 4.0 — Topologia Visual de Conexões</h1>
+        <p>Grafo de Conectividade de Microsserviços, Protocolos e Portas do Monorepo</p>
+      </div>
+    </div>
+
+    <!-- Protocol Legend -->
+    <div class="legend-bar">
+      <div class="legend-item"><span class="legend-dot" style="background: var(--p-kafka); color: var(--p-kafka)"></span> Kafka PubSub</div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--p-http); color: var(--p-http)"></span> HTTP / REST / GraphQL</div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--p-sql); color: var(--p-sql)"></span> PostgreSQL / SQL Dapper</div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--p-valkey); color: var(--p-valkey)"></span> Valkey RESP (Locks/Cache)</div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--p-industrial); color: var(--p-industrial)"></span> Modbus / MQTT Industrial</div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--p-otlp); color: var(--p-otlp)"></span> OTLP & OpenLineage</div>
+    </div>
+  </div>
+</header>
+
+<!-- Canvas Stage Container -->
+<main class="canvas-container">
+
+  <div class="canvas-toolbar">
+    <div style="font-size: 13px; color: var(--text-secondary);">
+      💡 <b>Dica Interativa:</b> Passe o mouse sobre qualquer nó para <b>destacar exclusivamente as conexões de entrada/saída</b> daquele componente.
+    </div>
+    <div>
+      <button class="tool-btn" onclick="resetConnections()">🔄 Resetar Destaque</button>
+      <a href="diagrama-arquitetura.html" class="tool-btn" style="text-decoration:none;">📄 Ver Diagrama em Camadas</a>
+    </div>
+  </div>
+
+  <div class="stage-wrapper" id="stageWrapper">
+    <!-- SVG Connection Wires -->
+    <svg class="connections-svg" id="connectionsSvg">
+      <defs>
+        <!-- Arrowhead Markers for Protocols -->
+        <marker id="arrow-kafka" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
+        </marker>
+        <marker id="arrow-http" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#38bdf8" />
+        </marker>
+        <marker id="arrow-sql" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#a855f7" />
+        </marker>
+        <marker id="arrow-valkey" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b" />
+        </marker>
+        <marker id="arrow-ind" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#f43f5e" />
+        </marker>
+      </defs>
+      <!-- Paths generated dynamically by JS -->
+    </svg>
+
+    <!-- Node Grid Layout -->
+    <div class="nodes-layer" id="nodesLayer">
+
+      <!-- COLUNA 1: BORDA FABRIL & GATEWAY -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted); text-transform:uppercase;">[01] Entradas & Borda</div>
+        
+        <div class="topo-node" id="node-client" onmouseenter="focusNode('client')" onmouseleave="resetConnections()" onclick="openModal('client')">
+          <div class="node-header-row">
+            <span class="node-title-text">📱 Client (PWA / Tauri)</span>
+            <span class="port-badge">:8080</span>
+          </div>
+          <p class="node-body-text">PWA estática + Shells Desktop/Mobile. Comunica via HTTPS e WebSockets.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-http">HTTP / WSS</span>
+          </div>
+        </div>
+
+        <div class="topo-node" id="node-edge" onmouseenter="focusNode('edge')" onmouseleave="resetConnections()" onclick="openModal('edge')">
+          <div class="node-header-row">
+            <span class="node-title-text">🔌 Edge.ProtocolGateway</span>
+            <span class="port-badge">:1883 / :502</span>
+          </div>
+          <p class="node-body-text">Conecta em PLCs SMT via Modbus/MQTT. Traduz para Avro com buffer store-and-forward.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-ind">MQTT / Modbus</span>
+            <span class="conn-chip c-kafka">Pub: sensor-reading</span>
+          </div>
+        </div>
+
+        <div class="topo-node" id="node-mes" onmouseenter="focusNode('mes')" onmouseleave="resetConnections()" onclick="openModal('mes')">
+          <div class="node-header-row">
+            <span class="node-title-text">🏭 Mes.Connector</span>
+            <span class="port-badge">:80 / :1433 / :5432</span>
+          </div>
+          <p class="node-desc">Adapta REST (`RestMesAdapter`) e SQL (`SqlMesAdapter` Dapper) com `PostgresCursorStore`.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-sql">SQL Server / Oracle</span>
+            <span class="conn-chip c-sql">Postgres Cursor</span>
+            <span class="conn-chip c-kafka">Pub: mes-evento</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUNA 2: GATEWAY, AUTH & KAFKA -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted); text-transform:uppercase;">[02] Gateway & Event Bus</div>
+
+        <div class="topo-node" id="node-gateway" onmouseenter="focusNode('gateway')" onmouseleave="resetConnections()" onclick="openModal('gateway')">
+          <div class="node-header-row">
+            <span class="node-title-text">🛡️ Gateway.Host (YARP)</span>
+            <span class="port-badge">:8080 / :8443</span>
+          </div>
+          <p class="node-body-text">Ponto de entrada YARP. Valida JWT, autorização ABAC e rate limit distribuído Valkey.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-http">HTTP YARP Proxy</span>
+            <span class="conn-chip c-valkey">Valkey RateLimit</span>
+          </div>
+        </div>
+
+        <div class="topo-node" id="node-identity" onmouseenter="focusNode('identity')" onmouseleave="resetConnections()" onclick="openModal('identity')">
+          <div class="node-header-row">
+            <span class="node-title-text">🔑 Identity.Api</span>
+            <span class="port-badge">:5000</span>
+          </div>
+          <p class="node-body-text">Autenticação TOTP RFC 6238, emissão JWT e rotação de refresh tokens via OpenBao.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-http">HTTP REST</span>
+            <span class="conn-chip c-sql">OpenBao Secrets</span>
+          </div>
+        </div>
+
+        <div class="topo-node" id="node-kafka" onmouseenter="focusNode('kafka')" onmouseleave="resetConnections()" onclick="openModal('kafka')">
+          <div class="node-header-row">
+            <span class="node-title-text">⚡ Apache Kafka Bus</span>
+            <span class="port-badge">:9092</span>
+          </div>
+          <p class="node-body-text">Espinha dorsal de eventos desacoplada com 12 contratos Avro executáveis.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-kafka">12 Schemas Avro</span>
+            <span class="conn-chip c-kafka">Pub/Sub At-Least-Once</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUNA 3: PROCESSAMENTO & IA -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted); text-transform:uppercase;">[03] Serviços & IA</div>
+
+        <div class="topo-node" id="node-ingest" onmouseenter="focusNode('ingest')" onmouseleave="resetConnections()" onclick="openModal('ingest')">
+          <div class="node-header-row">
+            <span class="node-title-text">📊 Telemetry.Ingest</span>
+            <span class="port-badge">Worker</span>
+          </div>
+          <p class="node-body-text">Quality Gate. Valida faixa física e `clock_source` (chrony). Envia dados p/ Postgres e TSDB.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-kafka">Sub: sensor-reading</span>
+            <span class="conn-chip c-sql">Postgres / TSDB</span>
+          </div>
+        </div>
+
+        <div class="topo-node" id="node-predictive" onmouseenter="focusNode('predictive')" onmouseleave="resetConnections()" onclick="openModal('predictive')">
+          <div class="node-header-row">
+            <span class="node-title-text">📈 Predictive & iDMSS</span>
+            <span class="port-badge">Worker</span>
+          </div>
+          <p class="node-body-text">Scoring EWMA/z-score online e algoritmo de ranking de diagnósticos SMT (`DiagnosisRanking`).</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-kafka">Sub: sensor-reading</span>
+            <span class="conn-chip c-kafka">Pub: linha-alerta</span>
+          </div>
+        </div>
+
+        <div class="topo-node" id="node-airouter" onmouseenter="focusNode('airouter')" onmouseleave="resetConnections()" onclick="openModal('airouter')">
+          <div class="node-header-row">
+            <span class="node-title-text">🔀 Ai.Router & Workers</span>
+            <span class="port-badge">Workers</span>
+          </div>
+          <p class="node-body-text">Router de jobs de IA + `ValkeyIdempotencyLedger` (trava atômica `SET NX` com TTL no Valkey).</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-kafka">Sub: ai-job.v1</span>
+            <span class="conn-chip c-valkey">Valkey SET NX</span>
+          </div>
+        </div>
+
+        <div class="topo-node" id="node-knowledge" onmouseenter="focusNode('knowledge')" onmouseleave="resetConnections()" onclick="openModal('knowledge')">
+          <div class="node-header-row">
+            <span class="node-title-text">🧠 Knowledge & Chatbot</span>
+            <span class="port-badge">:5004 / :5005</span>
+          </div>
+          <p class="node-body-text">GraphQL + pgvector HNSW. Base Ishikawa 6M (`CausaRaizStore`) e MCP Server para o Chatbot.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-http">GraphQL / MCP</span>
+            <span class="conn-chip c-sql">pgvector HNSW</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUNA 4: BANCOS, LAKE & OBSERVALIDADE -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted); text-transform:uppercase;">[04] Dados & Observabilidade</div>
+
+        <div class="topo-node" id="node-postgres" onmouseenter="focusNode('postgres')" onmouseleave="resetConnections()" onclick="openModal('postgres')">
+          <div class="node-header-row">
+            <span class="node-title-text">🐘 PostgreSQL 16</span>
+            <span class="port-badge">:5432</span>
+          </div>
+          <p class="node-body-text">Banco relacional + vetorial. Guarda outbox, `mes_cursor`, ordens e causas raiz pgvector.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-sql">PostgreSQL + HNSW</span>
+          </div>
+        </div>
+
+        <div class="topo-node" id="node-valkey" onmouseenter="focusNode('valkey')" onmouseleave="resetConnections()" onclick="openModal('valkey')">
+          <div class="node-header-row">
+            <span class="node-title-text">⚡ Valkey (Redis)</span>
+            <span class="port-badge">:6379</span>
+          </div>
+          <p class="node-body-text">Cache em memória, rate limiter token bucket e trava distribuída de IA (`ValkeyIdempotencyLedger`).</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-valkey">RESP Protocol</span>
+          </div>
+        </div>
+
+        <div class="topo-node" id="node-lake" onmouseenter="focusNode('lake')" onmouseleave="resetConnections()" onclick="openModal('lake')">
+          <div class="node-header-row">
+            <span class="node-title-text">📦 MinIO Lake & Marquez</span>
+            <span class="port-badge">:9000 / :5000</span>
+          </div>
+          <p class="node-body-text">Data.Archiver grava JSONL.gz WORM no MinIO. `LineageBridge` envia OpenLineage pro Marquez.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-http">S3 API / MinIO</span>
+            <span class="conn-chip c-kafka">LineageBridge</span>
+          </div>
+        </div>
+
+        <div class="topo-node" id="node-otel" onmouseenter="focusNode('otel')" onmouseleave="resetConnections()" onclick="openModal('otel')">
+          <div class="node-header-row">
+            <span class="node-title-text">🔭 OTel & Observabilidade</span>
+            <span class="port-badge">:4317 / :3000</span>
+          </div>
+          <p class="node-body-text">OTel Collector distribui Logs (Loki), Traces (Tempo) e Métricas (VictoriaMetrics) pro Grafana.</p>
+          <div class="connection-chips">
+            <span class="conn-chip c-http">Grafana / Loki</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- Info Modal -->
+<div class="node-modal-overlay" id="nodeModal" onclick="closeModal(event)">
+  <div class="node-modal-card" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal(null)">✕</button>
+    <h3 id="mTitle" style="font-family: var(--font-heading); font-size: 20px;">Detalhes da Conexão</h3>
+    <div id="mContent" style="font-size: 13.5px; color: var(--text-secondary); display:flex; flex-direction:column; gap:12px;"></div>
+  </div>
+</div>
+
+<script>
+  // Connections Graph Specification (Verified empirical connections in codebase)
+  const connections = [
+    // Client -> Gateway
+    { from: 'client', to: 'gateway', color: 'var(--p-http)', label: 'HTTPS / WSS (:8080)' },
+    // Edge -> Kafka
+    { from: 'edge', to: 'kafka', color: 'var(--p-kafka)', label: 'Kafka Pub: sensor-reading' },
+    // MES -> Postgres & Kafka
+    { from: 'mes', to: 'postgres', color: 'var(--p-sql)', label: 'SQL / PostgresCursorStore' },
+    { from: 'mes', to: 'kafka', color: 'var(--p-kafka)', label: 'Kafka Pub: mes-evento' },
+    // Gateway -> Identity & Valkey & Microservices
+    { from: 'gateway', to: 'identity', color: 'var(--p-http)', label: 'HTTP Auth Check (:5000)' },
+    { from: 'gateway', to: 'valkey', color: 'var(--p-valkey)', label: 'Valkey Rate Limit (:6379)' },
+    { from: 'gateway', to: 'knowledge', color: 'var(--p-http)', label: 'HTTP YARP Proxy' },
+    // Telemetry.Ingest -> Kafka & Postgres & Victoria
+    { from: 'kafka', to: 'ingest', color: 'var(--p-kafka)', label: 'Kafka Sub: sensor-reading' },
+    { from: 'ingest', to: 'postgres', color: 'var(--p-sql)', label: 'SQL Insert (sensor_readings)' },
+    // Predictive -> Kafka
+    { from: 'kafka', to: 'predictive', color: 'var(--p-kafka)', label: 'Kafka Sub: sensor-reading' },
+    { from: 'predictive', to: 'kafka', color: 'var(--p-kafka)', label: 'Kafka Pub: linha-alerta' },
+    // Ai.Router & Valkey Idempotency
+    { from: 'kafka', to: 'airouter', color: 'var(--p-kafka)', label: 'Kafka Sub: ai-job.v1' },
+    { from: 'airouter', to: 'valkey', color: 'var(--p-valkey)', label: 'SET NX ValkeyIdempotencyLedger' },
+    // Knowledge -> Postgres
+    { from: 'knowledge', to: 'postgres', color: 'var(--p-sql)', label: 'pgvector HNSW (causa_raiz)' },
+    // Data.Archiver -> Kafka & MinIO & Marquez
+    { from: 'kafka', to: 'lake', color: 'var(--p-kafka)', label: 'Kafka Sub: Todos Tópicos' },
+    { from: 'lake', to: 'postgres', color: 'var(--p-sql)', label: 'OpenLineage Metadata' }
+  ];
+
+  // Draw Wire Lines on Canvas SVG
+  function drawConnections() {
+    const svg = document.getElementById('connectionsSvg');
+    // Clear existing paths
+    const existingPaths = svg.querySelectorAll('path');
+    existingPaths.forEach(p => p.remove());
+
+    const svgRect = svg.getBoundingClientRect();
+
+    connections.forEach((conn, idx) => {
+      const fromEl = document.getElementById(`node-${conn.from}`);
+      const toEl = document.getElementById(`node-${conn.to}`);
+
+      if (!fromEl || !toEl) return;
+
+      const fRect = fromEl.getBoundingClientRect();
+      const tRect = toEl.getBoundingClientRect();
+
+      const x1 = (fRect.left + fRect.width) - svgRect.left;
+      const y1 = (fRect.top + fRect.height / 2) - svgRect.top;
+      const x2 = tRect.left - svgRect.left;
+      const y2 = (tRect.top + tRect.height / 2) - svgRect.top;
+
+      // Curved Bezier Control Points
+      const dx = Math.abs(x2 - x1) * 0.5;
+      const pathData = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', pathData);
+      path.setAttribute('class', 'wire-line animated');
+      path.setAttribute('stroke', conn.color);
+      path.setAttribute('id', `wire-${conn.from}-${conn.to}`);
+      path.dataset.from = conn.from;
+      path.dataset.to = conn.to;
+
+      svg.appendChild(path);
+    });
+  }
+
+  // Focus and Highlight Node Connections
+  function focusNode(nodeId) {
+    const wires = document.querySelectorAll('.wire-line');
+    const nodes = document.querySelectorAll('.topo-node');
+
+    let connectedNodeIds = new Set([nodeId]);
+
+    wires.forEach(wire => {
+      if (wire.dataset.from === nodeId || wire.dataset.to === nodeId) {
+        wire.classList.add('highlighted');
+        wire.classList.remove('dimmed');
+        connectedNodeIds.add(wire.dataset.from);
+        connectedNodeIds.add(wire.dataset.to);
+      } else {
+        wire.classList.add('dimmed');
+        wire.classList.remove('highlighted');
+      }
+    });
+
+    nodes.forEach(node => {
+      const nId = node.id.replace('node-', '');
+      if (connectedNodeIds.has(nId)) {
+        node.classList.remove('dimmed-node');
+        if (nId === nodeId) node.classList.add('active-focus');
+      } else {
+        node.classList.add('dimmed-node');
+        node.classList.remove('active-focus');
+      }
+    });
+  }
+
+  // Reset Connections
+  function resetConnections() {
+    document.querySelectorAll('.wire-line').forEach(w => {
+      w.classList.remove('highlighted', 'dimmed');
+    });
+    document.querySelectorAll('.topo-node').forEach(n => {
+      n.classList.remove('dimmed-node', 'active-focus');
+    });
+  }
+
+  // Open Modal Details
+  function openModal(nodeId) {
+    const modal = document.getElementById('nodeModal');
+    const title = document.getElementById('mTitle');
+    const content = document.getElementById('mContent');
+
+    const outgoing = connections.filter(c => c.from === nodeId);
+    const incoming = connections.filter(c => c.to === nodeId);
+
+    title.innerText = `Componente: ${nodeId.toUpperCase()}`;
+    
+    let outHtml = outgoing.map(c => `<li><b>Saída:</b> ➔ <code>${c.to}</code> (${c.label})</li>`).join('');
+    let inHtml = incoming.map(c => `<li><b>Entrada:</b> ⬅ <code>${c.from}</code> (${c.label})</li>`).join('');
+
+    content.innerHTML = `
+      <div><b>Conexões de Entrada:</b><ul>${inHtml || '<li>Nenhuma conexão direta de entrada</li>'}</ul></div>
+      <div><b>Conexões de Saída:</b><ul>${outHtml || '<li>Nenhuma conexão direta de saída</li>'}</ul></div>
+    `;
+
+    modal.classList.add('open');
+  }
+
+  function closeModal(e) {
+    document.getElementById('nodeModal').classList.remove('open');
+  }
+
+  // Redraw on window resize
+  window.addEventListener('resize', drawConnections);
+  window.addEventListener('load', () => {
+    setTimeout(drawConnections, 100);
+  });
+</script>
+</body>
+</html>

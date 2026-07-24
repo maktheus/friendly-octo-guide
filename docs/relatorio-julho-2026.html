@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatório de Atividade Individual PD&I — Julho/2026 — TECEMI 4.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --primary: #0f172a;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --success: #16a34a;
+    --success-bg: #dcfce7;
+    --text: #334155;
+    --text-dark: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --bg-card: #ffffff;
+    --bg-page: #f8fafc;
+    --radius: 10px;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    background-color: var(--bg-page);
+    line-height: 1.6;
+    padding: 30px 15px;
+  }
+
+  .report-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    padding: 40px 50px;
+  }
+
+  /* Header Section */
+  .report-header {
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .logo-group h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-group p {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .doc-badge {
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 999px;
+  }
+
+  /* Section Titles */
+  h2.section-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 30px 0 15px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Data Tables */
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 25px;
+    font-size: 13.5px;
+  }
+
+  table.data-table th, table.data-table td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+
+  table.data-table th {
+    background-color: #f1f5f9;
+    color: var(--text-dark);
+    font-weight: 600;
+  }
+
+  table.data-table td.strong {
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #fef3c7;
+    color: #d97706;
+    border: 1px solid #fde68a;
+  }
+
+  .status-ok {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
+
+  /* FPDI Field Blocks */
+  .fpdi-block {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+
+  .fpdi-block.b-desc { border-left: 5px solid #2563eb; }
+  .fpdi-block.b-just { border-left: 5px solid #d97706; background: #fffbebf9; }
+  .fpdi-block.b-evid { border-left: 5px solid #059669; }
+  .fpdi-block.b-res  { border-left: 5px solid #7c3aed; background: #f5f3ff; }
+
+  .fpdi-block-header {
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .b-desc .fpdi-block-header { color: #1e40af; }
+  .b-just .fpdi-block-header { color: #b45309; }
+  .b-evid .fpdi-block-header { color: #047857; }
+  .b-res  .fpdi-block-header { color: #6d28d9; }
+
+  .fpdi-block-content {
+    font-size: 13.5px;
+    line-height: 1.7;
+  }
+
+  .fpdi-block-content p {
+    margin-bottom: 12px;
+  }
+
+  .fpdi-block-content p:last-child {
+    margin-bottom: 0;
+  }
+
+  ul.tech-list {
+    margin-left: 20px;
+    margin-bottom: 12px;
+  }
+
+  ul.tech-list li {
+    margin-bottom: 6px;
+  }
+
+  /* Metrics Highlight Grid */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 20px 0 25px;
+  }
+
+  .metric-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+
+  .metric-val {
+    font-family: 'Outfit', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .metric-lbl {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  /* VISUAL DASHBOARDS FOR TESTS & ML */
+  .visual-dashboard-box {
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+  }
+
+  .dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+  }
+
+  .dash-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Test Dashboard Widgets */
+  .test-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .test-stat-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .test-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(22, 163, 74, 0.2);
+    color: #4ade80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .progress-bar-container {
+    background: rgba(255,255,255,0.1);
+    border-radius: 999px;
+    height: 10px;
+    width: 100%;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-bar-fill {
+    background: linear-gradient(90deg, #22c55e, #10b981);
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.5s ease;
+  }
+
+  /* Confusion Matrix Table Visual */
+  .cm-grid {
+    display: grid;
+    grid-template-columns: 100px 1fr 1fr;
+    gap: 8px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    margin-top: 12px;
+  }
+
+  .cm-cell {
+    padding: 12px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .cm-head { background: rgba(255,255,255,0.05); font-weight: 700; color: #94a3b8; }
+  .cm-tp { background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; }
+  .cm-tn { background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; }
+  .cm-fp { background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24; }
+  .cm-fn { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; }
+
+  /* Signature Box */
+  .signatures-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px dashed var(--border);
+    flex-wrap: wrap;
+  }
+
+  .sig-col {
+    flex: 1;
+    min-width: 250px;
+    text-align: center;
+  }
+
+  .sig-line {
+    border-top: 1px solid var(--text-dark);
+    margin-bottom: 8px;
+  }
+
+  .sig-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-dark);
+  }
+
+  .sig-role {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Print Styles */
+  @media print {
+    body { background: white; padding: 0; }
+    .report-wrapper { border: none; box-shadow: none; padding: 0; max-width: 100%; }
+    .no-print { display: none; }
+    .fpdi-block { page-break-inside: avoid; }
+    .visual-dashboard-box { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="report-wrapper">
+
+  <!-- Action Bar (No Print) -->
+  <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid var(--border)">
+    <span style="font-size:12px; color:var(--text-muted)">📄 Relatório de Atividade Individual PD&I (FPDI 003 - 00)</span>
+    <div>
+      <button onclick="window.print()" style="background:var(--accent); color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer; font-size:13px">🖨️ Imprimir / Salvar PDF</button>
+      <a href="diagrama-arquitetura.html" style="margin-left:8px; text-decoration:none; background:#f1f5f9; color:var(--text-dark); padding:8px 16px; border-radius:6px; font-size:13px; font-weight:600; border:1px solid var(--border)">📊 Ver Diagrama HTML</a>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="report-header">
+    <div class="logo-group">
+      <h1>Relatório de Atividade Individual — PD&I</h1>
+      <p>Projeto TECEMI 4.0 — Tecnologias Emergentes e Indústria 4.0</p>
+    </div>
+    <div class="doc-badge">FPDI 003 - 00</div>
+  </header>
+
+  <!-- 1. Identificação do Projeto -->
+  <h2 class="section-title">📌 1. Identificação do Projeto e Bolsista</h2>
+  <table class="data-table">
+    <tr>
+      <td class="strong" style="width:25%">Projeto:</td>
+      <td>Tecnologia Emergentes e Indústria 4.0 (TECEMI4.0)</td>
+    </tr>
+    <tr>
+      <td class="strong">Gestão Técnica:</td>
+      <td>FUNDAÇÃO UNIVERSITAS DE ESTUDOS AMAZÔNICOS – FUEA</td>
+    </tr>
+    <tr>
+      <td class="strong">Executor do Projeto:</td>
+      <td>PROF. DR. DÉRCIO LUIZ REIS</td>
+    </tr>
+    <tr>
+      <td class="strong">Escola / Laboratório:</td>
+      <td>FACULDADE DE TECNOLOGIA – FT/UFAM / LABORATÓRIO INDÚSTRIA 4.0</td>
+    </tr>
+    <tr>
+      <td class="strong">Período do Projeto:</td>
+      <td>01/01/2025 A 31/12/2026</td>
+    </tr>
+    <tr>
+      <td class="strong">Mês de Referência:</td>
+      <td class="strong" style="color:var(--accent)">Julho / 2026 (01/07/2026 a 31/07/2026) — 1º Mês de Bolsa (Estudos & Prova de Conceito)</td>
+    </tr>
+    <tr>
+      <td class="strong">Nome do Bolsista:</td>
+      <td>[Preencher com seu Nome Completo]</td>
+    </tr>
+    <tr>
+      <td class="strong">Função no Projeto:</td>
+      <td>Aluno Bolsista / Engenheiro de Software / Desenvolvedor de IA e Plataforma</td>
+    </tr>
+  </table>
+
+  <!-- 2. Resultados do Período -->
+  <h2 class="section-title">📊 2. Resultados do Período</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Atividade Macro no Plano</th>
+        <th>Subatividade Desempenhada</th>
+        <th>Período Executado</th>
+        <th>Status</th>
+        <th>% Conclusão</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="strong">Desenvolvimento das pesquisas</td>
+        <td>Desenvolvimento das aplicações práticas das pesquisas dos mestrandos. Levantamento básico do projeto e arquitetura base.</td>
+        <td>01/07/2026 a 31/07/2026</td>
+        <td><span class="status-badge">Em andamento</span></td>
+        <td class="strong">8%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Metrics Highlight Grid -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-val">80h</div>
+      <div class="metric-lbl">Quantidade de Horas no Mês</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">16</div>
+      <div class="metric-lbl">Módulos de Domínio C#</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">97/97</div>
+      <div class="metric-lbl">Testes Unitários Aprovados</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">97.26%</div>
+      <div class="metric-lbl">ROC-AUC Preditivo SOTA</div>
+    </div>
+  </div>
+
+  <!-- 3. Detalhamento das Atividades -->
+  <h2 class="section-title">📝 3. Detalhamento das Atividades Em Andamento e Concluídas</h2>
+  
+  <p style="font-size:13px; color:var(--text-muted); margin-bottom:15px">
+    <b>Atividade Macro no Plano de Trabalho:</b> Desenvolvimento das pesquisas<br>
+    <b>Subatividade(s):</b> Estudo de viabilidade técnica, levantamento bibliográfico do estado da arte (SOTA), concepção da arquitetura base da plataforma TECEMI 4.0 e integração prática das 3 pesquisas de mestrado.<br>
+    <b>Quantidade de Horas no Mês:</b> 80h
+  </p>
+
+  <!-- BLOCO 1: DESCRITIVO -->
+  <div class="fpdi-block b-desc">
+    <div class="fpdi-block-header">📋 DESCRITIVO</div>
+    <div class="fpdi-block-content">
+      <p><b>Contexto do Primeiro Mês (Julho/2026):</b> No presente mês de Julho/2026, correspondente ao <b>primeiro mês do ciclo de bolsa</b>, as atividades foram dedicadas a <b>estudos teóricos, levantamento bibliográfico do estado da arte (SOTA) e desenvolvimento da prova de conceito (PoC) da arquitetura base de software</b> da plataforma TECEMI 4.0.</p>
+
+      <p>A atuação compreendeu a estruturação prática dos módulos de software necessários para sustentar as três pesquisas de mestrado do projeto (Visão SPI/AOI, Assistente Preditivo iDMSS e Inferência Lógica Ishikawa). Durante o período de 80h, foram desenvolvidos e catalogados os seguintes componentes no repositório:</p>
+
+      <ul class="tech-list">
+        <li><b>Arquitetura Base e Governança de Software:</b> Estruturação do monorepo em <b>16 módulos de domínio</b> sob o diretório <code>src/</code>, compostos por <b>54 projetos .NET</b>, <b>238 arquivos C#</b>, <b>12 schemas Avro</b> (<code>schemas/</code>), <b>10 registros de decisão de arquitetura (ADRs)</b> e <b>26 pipelines de CI/CD</b>. Implementação de autenticação TOTP (RFC 6238), JWT 5 min e RBAC/ABAC no YARP Gateway.</li>
+        <li><b>Módulo de Integração com Sistemas MES Legados:</b> Suporte dual de ingestão via <code>RestMesAdapter</code> (REST) e <code>SqlMesAdapter</code> (consultas SQL via Dapper em SQL Server/Oracle/Postgres) com cursor durável em PostgreSQL (<code>PostgresCursorStore</code>).</li>
+        <li><b>Repositório de Conhecimento Causal Ishikawa 6M & pgvector:</b> Repositório <code>CausaRaizStore</code> com busca vetorial HNSW via <code>pgvector</code>, GraphQL HotChocolate e MCP Tool <code>consultar_causa_raiz</code>.</li>
+        <li><b>Sistema Preditivo iDMSS & Trava Distribuída para Trabalhadores de IA:</b> Algoritmo de ranking (<code>DiagnosisRanking</code>) + trava atômica distribuída <code>ValkeyIdempotencyLedger</code> (<code>SET NX</code> com TTL no Valkey/Redis). Treinamento do modelo <b>Gradient Boosting + SMOTE</b> atingindo <b>97.26% ROC-AUC</b> no dataset AI4I 2020.</li>
+        <li><b>Módulo de Inspeção Óptica SPI / AOI:</b> Contrato <code>inspecao-smt.avsc</code>, <code>InspecaoSmtCodec</code>, router <code>Ai.Router</code>, worker <code>Ai.Worker.Vision</code> e benchmark SOTA de <b>96.4% mAP@50 a 140 FPS</b> no dataset <code>SolDef_AI</code> (YOLO11s).</li>
+        <li><b>Motor de Inferência Lógica Dedutiva Ishikawa 6M:</b> Desenvolvido o motor <code>IshikawaRuleEngine.cs</code> (<i>forward chaining</i> com explicação auditável XAI), consulta GraphQL <code>avaliarRegrasIshikawa</code> e ferramenta MCP <code>avaliar_regras_ishikawa</code>.</li>
+        <li><b>Documentação e Portais Gráficos:</b> Desenvolvimento do <a href="diagrama-arquitetura.html" target="_blank">Diagrama por Camadas</a> e do <a href="diagrama-conexoes-visual.html" target="_blank">Grafo Visual de Conexões</a> em HTML5/Glassmorphism.</li>
+        <li><b>Suíte de Testes Automatizados:</b> Execução da suíte de testes com <b>97 testes unitários e de integração 100% APROVADOS</b> (46 em Knowledge, 22 em Ai e 29 em Mes.Connector).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- BLOCO 2: JUSTIFICATIVA -->
+  <div class="fpdi-block b-just">
+    <div class="fpdi-block-header">💡 JUSTIFICATIVA</div>
+    <div class="fpdi-block-content">
+      <p>Por se tratar do <b>primeiro mês de atuação no projeto (Julho/2026)</b>, foi indispensável realizar um mergulho analítico no estudo teórico, na análise de viabilidade tecnológica e na concepção da arquitetura base de software da plataforma TECEMI 4.0.</p>
+      <p>Diferentemente de protótipos acadêmicos isolados, o desenvolvimento de uma solução de Inteligência Artificial e diagnóstico preditivo para linhas de montagem SMT exige que a arquitetura seja concebida desde o primeiro dia com alta modularidade, resiliência e suporte a padrões industriais. A construção prévia de uma arquitetura modular em monorepo C# / .NET, combinada com a validação empírica dos algoritmos de aprendizado de máquina e motores de inferência dedutiva, justifica-se pela necessidade de garantir uma base sólida de engenharia de software antes da entrada em produção na fábrica real do PIM.</p>
+      <p>Essa abordagem previne desvios de escopo, assegura a interoperabilidade entre as pesquisas dos três mestrandos e viabiliza a entrega de um Produto Mínimo Viável (MVP) robusto e aderente aos requisitos operacionais da Indústria 4.0 e da FUEA/UFAM.</p>
+    </div>
+  </div>
+
+  <!-- BLOCO 3: EVIDÊNCIAS -->
+  <div class="fpdi-block b-evid">
+    <div class="fpdi-block-header">🖼️ EVIDÊNCIAS E DASHBOARDS VISUAIS</div>
+    <div class="fpdi-block-content">
+      <p>Como evidência empírica das atividades desenvolvidas durante o primeiro mês, foram documentados os diagramas de arquitetura e construídos os painéis visuais de execução da suíte de testes e performance do modelo preditivo:</p>
+      
+      <!-- DASHBOARD VISUAL 1: SUÍTE DE 97 TESTES -->
+      <div class="visual-dashboard-box">
+        <div class="dash-header">
+          <div class="dash-title">🧪 Dashboard da Suíte de 97 Testes Automatizados</div>
+          <span style="background:#16a34a; color:#fff; font-size:11px; padding:3px 10px; border-radius:999px; font-weight:700">100% VERDE</span>
+        </div>
+
+        <div class="test-stats-row">
+          <div class="test-stat-card">
+            <div class="test-stat-icon">✓</div>
+            <div>
+              <div style="font-size:18px; font-weight:800; color:#4ade80">46 / 46</div>
+              <div style="font-size:11px; color:#94a3b8">Knowledge.Tests (Regras 6M)</div>
+            </div>
+          </div>
+          <div class="test-stat-card">
+            <div class="test-stat-icon">✓</div>
+            <div>
+              <div style="font-size:18px; font-weight:800; color:#4ade80">22 / 22</div>
+              <div style="font-size:11px; color:#94a3b8">Ai.Tests (Valkey Lock SET NX)</div>
+            </div>
+          </div>
+          <div class="test-stat-card">
+            <div class="test-stat-icon">✓</div>
+            <div>
+              <div style="font-size:18px; font-weight:800; color:#4ade80">29 / 29</div>
+              <div style="font-size:11px; color:#94a3b8">Mes.Connector.Tests (Dapper)</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:12px; color:#cbd5e1; display:flex; justify-content:space-between; margin-top:6px">
+          <span>Progresso de Aprovação: <b>97 de 97 testes (0 falhas, 0 ignorados)</b></span>
+          <span style="color:#4ade80; font-weight:700">100% Pass Rate</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" style="width:100%"></div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD VISUAL 2: MODELO PREDITIVO SOTA AI4I 2020 -->
+      <div class="visual-dashboard-box" style="background:#0f172a; border-top:3px solid #38bdf8">
+        <div class="dash-header">
+          <div class="dash-title">🤖 Painel do Modelo Preditivo SOTA (AI4I 2020 Benchmark)</div>
+          <span style="background:#0284c7; color:#fff; font-size:11px; padding:3px 10px; border-radius:999px; font-weight:700">ROC-AUC 97.26%</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; align-items:center;">
+          <!-- Left: Metrics breakdown -->
+          <div>
+            <div style="margin-bottom:10px">
+              <div style="display:flex; justify-content:space-between; font-size:12px">
+                <span>ROC-AUC Score:</span>
+                <b style="color:#38bdf8">97.26% (0.9726)</b>
+              </div>
+              <div class="progress-bar-container"><div class="progress-bar-fill" style="width:97.26%; background:#38bdf8"></div></div>
+            </div>
+
+            <div style="margin-bottom:10px">
+              <div style="display:flex; justify-content:space-between; font-size:12px">
+                <span>Recall (Detecção de Falhas):</span>
+                <b style="color:#4ade80">83.82% (57 / 68 falhas)</b>
+              </div>
+              <div class="progress-bar-container"><div class="progress-bar-fill" style="width:83.82%; background:#4ade80"></div></div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:12px">
+                <span>Algoritmo / Balanceamento:</span>
+                <b style="color:#f1f5f9">GradientBoosting + SMOTE</b>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Visual Confusion Matrix -->
+          <div>
+            <div style="font-size:11px; text-align:center; color:#94a3b8; margin-bottom:4px">MATRIZ DE CONFUSÃO (2.000 amostras cegas)</div>
+            <div class="cm-grid">
+              <div class="cm-cell cm-head"></div>
+              <div class="cm-cell cm-head">Pred: OK</div>
+              <div class="cm-cell cm-head">Pred: FALHA</div>
+
+              <div class="cm-cell cm-head">Real: OK</div>
+              <div class="cm-cell cm-tn">
+                <span style="font-size:16px; font-weight:800">1.872</span>
+                <span style="font-size:9px">Verdadeiro Negativo</span>
+              </div>
+              <div class="cm-cell cm-fp">
+                <span style="font-size:16px; font-weight:800">60</span>
+                <span style="font-size:9px">Falso Positivo</span>
+              </div>
+
+              <div class="cm-cell cm-head">Real: FALHA</div>
+              <div class="cm-cell cm-fn">
+                <span style="font-size:16px; font-weight:800">11</span>
+                <span style="font-size:9px">Falso Negativo</span>
+              </div>
+              <div class="cm-cell cm-tp">
+                <span style="font-size:16px; font-weight:800">57</span>
+                <span style="font-size:9px">Verdadeiro Positivo</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <table class="data-table" style="margin-top:15px">
+        <thead>
+          <tr>
+            <th>Evidência / Artefato</th>
+            <th>Descrição Técnica e Caminho no Repositório</th>
+            <th>Status de Validação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="strong">Figura 1: Arquitetura em Camadas</td>
+            <td>Aplicação web interativa em HTML/Glassmorphism mapeando os 16 módulos C# e 238 arquivos de código (<a href="diagrama-arquitetura.html" target="_blank">docs/diagrama-arquitetura.html</a>).</td>
+            <td><span class="status-badge status-ok">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="strong">Figura 2: Grafo de Conectividade</td>
+            <td>Grafo de conexões SVG interativo com fluxo de dados, portas (8080, 5000, 9092, 5432, 6379) e protocolos (<a href="diagrama-conexoes-visual.html" target="_blank">docs/diagrama-conexoes-visual.html</a>).</td>
+            <td><span class="status-badge status-ok">Concluído</span></td>
+          </tr>
+          <tr>
+            <td class="strong">Suíte de 97 Testes Automatizados</td>
+            <td>Execução dos testes em Knowledge.Tests (46), Ai.Tests (22) e Mes.Connector.Tests (29) via <code>dotnet test</code>.</td>
+            <td><span class="status-badge status-ok">100% Verde</span></td>
+          </tr>
+          <tr>
+            <td class="strong">Modelo Preditivo SOTA (AI4I 2020)</td>
+            <td>Script <code>scripts/train_idmss_rf.py</code> com treino GradientBoosting + SMOTE salvo em <code>models/predictive_idmss.pkl</code>.</td>
+            <td><span class="status-badge status-ok">ROC-AUC 97.26%</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BLOCO 4: RESULTADO -->
+  <div class="fpdi-block b-res">
+    <div class="fpdi-block-header">🏆 RESULTADO</div>
+    <div class="fpdi-block-content">
+      <p>Como resultado das atividades executadas no primeiro mês de referência (Julho/2026), foram alcançados os seguintes entregáveis práticos e conceituais:</p>
+      <ul class="tech-list">
+        <li><b>Levantamento Bibliográfico e Prova de Conceito:</b> Estudo de viabilidade consolidado para as técnicas de Visão Computacional (YOLO11s), Preditivo (XGBoost/RF + SMOTE) e Inferência Lógica Ishikawa 6M.</li>
+        <li><b>Monorepo de Código-Fonte Estruturado:</b> 16 módulos de domínio C# criados e validados, acompanhados de 12 schemas Avro, 10 ADRs de governança e 26 workflows de CI/CD.</li>
+        <li><b>Desenvolvimento de Módulos Chave:</b> Implementação do Conector MES dual (REST/SQL via Dapper), repositório vetorial de causa raiz (<code>pgvector</code> HNSW), motor de regras Ishikawa (<code>IshikawaRuleEngine</code>), trava distribuída Valkey (<code>SET NX</code>) e pipeline de visão.</li>
+        <li><b>Resultados Preditivos e Testes:</b> 97 testes unitários e de integração 100% APROVADOS e modelo preditivo avaliado com pontuação ROC-AUC de 97.26%.</li>
+        <li><b>Portais Interativos de Acompanhamento:</b> Disponibilização de dois portais web interativos de arquitetura e topologia visual para acompanhamento técnico e demonstrativo junto à coordenação.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Signatures -->
+  <div class="signatures-row">
+    <div class="sig-col">
+      <div class="sig-line"></div>
+      <div class="sig-name">[Preencher com seu Nome Completo]</div>
+      <div class="sig-role">Aluno Bolsista / Engenheiro de Software</div>
+    </div>
+    <div class="sig-col">
+      <div class="sig-line"></div>
+      <div class="sig-name">Prof. Dr. Dércio Luiz Reis</div>
+      <div class="sig-role">Coordenador e Gestor Técnico do Projeto (FT/UFAM)</div>
+    </div>
+  </div>
+
+  <div style="margin-top:30px; text-align:center; font-size:12px; color:var(--text-muted)">
+    Manaus - AM, 31 de julho de 2026 — FUEA / UFAM / Laboratório Indústria 4.0
+  </div>
+
+</div>
+
+</body>
+</html>

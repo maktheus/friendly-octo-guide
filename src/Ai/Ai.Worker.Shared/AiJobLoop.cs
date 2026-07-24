@@ -20,10 +20,11 @@ public sealed partial class AiJobLoop(
     IJobProcessor processor,
     ServiceInstrumentation instrumentation,
     IConfiguration config,
-    ILogger<AiJobLoop> log) : BackgroundService
+    ILogger<AiJobLoop> log,
+    IIdempotencyLedger? ledger = null) : BackgroundService
 {
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
-    private readonly IdempotencyLedger _ledger = new(); // fase 1: Valkey SET NX — vale entre réplicas
+    private readonly IIdempotencyLedger _ledger = ledger ?? new InMemoryIdempotencyLedger();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -61,7 +62,7 @@ public sealed partial class AiJobLoop(
             activity?.SetTag("ai.job_id", job.JobId);
             activity?.SetTag("ai.model_type", job.ModelType);
 
-            if (_ledger.TryClaim(job.JobId) != JobClaim.Accepted)
+            if (await _ledger.TryClaimAsync(job.JobId, stoppingToken) != JobClaim.Accepted)
             {
                 consumer.Commit(result); // duplicata de entrega — resultado já existe ou está em voo
                 continue;
@@ -81,12 +82,12 @@ public sealed partial class AiJobLoop(
                         Value = JsonSerializer.Serialize(new { jobId = job.JobId, modelType = job.ModelType, output }, JsonOpts),
                     }, stoppingToken);
 
-                _ledger.Complete(job.JobId);
+                await _ledger.CompleteAsync(job.JobId, stoppingToken);
             }
             catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException or TaskCanceledException)
             {
                 failures.Add(1, new KeyValuePair<string, object?>("model_type", job.ModelType));
-                _ledger.Release(job.JobId); // devolve o claim: retry é legítimo
+                await _ledger.ReleaseAsync(job.JobId, stoppingToken); // devolve o claim: retry é legítimo
                 LogProcessingFailed(ex, job.JobId, job.Attempts + 1);
 
                 var retry = job with { Attempts = job.Attempts + 1 };

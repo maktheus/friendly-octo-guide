@@ -24,8 +24,8 @@ plataforma-linha/
 │   ├── Core.Execution/          # ordens de produção + outbox pattern (evento na mesma transação)
 │   ├── Notifications/           # escada de on-call por severidade; push ntfy
 │   ├── Edge.ProtocolGateway/    # fábrica → nuvem: Modbus/MQTT → buffer store-and-forward → Kafka
-│   ├── Telemetry.Ingest/        # quality gate → Postgres (aceita) / quarentena (rejeitada)
-│   ├── Ai/                      # router (DLQ, retry) + worker LLM (vLLM, idempotência por job-id)
+│   ├── Mes.Connector/           # poll MES (REST/SQL/simulador) + cursor durável (Postgres) → Kafka
+│   ├── Ai/                      # router (DLQ, retry) + 3 workers (vLLM, visão, embeddings, idempotência Valkey SET NX)
 │   ├── Predictive/              # scoring online EWMA/z-score + drift (acatech 5)
 │   ├── Decision.Engine/         # envelope de operação + aprovação por criticidade (acatech 6)
 │   └── Chatbot/                 # RAG com filtro RBAC + guardrails de ferramenta (always_ask)
@@ -64,6 +64,7 @@ export ASPNETCORE_ENVIRONMENT=Development
 dotnet run --project src/Identity/Identity.Api                          # :5000 — /v1/auth
 dotnet run --project src/Gateway/Gateway.Host                           # borda
 dotnet run --project src/Core.Execution/Core.Execution.Api              # ordens + outbox
+dotnet run --project src/Mes.Connector/Mes.Connector.Worker              # poll MES (REST/SQL/simulador)
 dotnet run --project src/Edge.ProtocolGateway/Edge.ProtocolGateway.Worker
 dotnet run --project src/Telemetry.Ingest/Telemetry.Ingest.Worker
 dotnet run --project src/Predictive/Predictive.Worker

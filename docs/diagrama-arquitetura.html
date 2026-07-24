@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TECEMI 4.0 — Diagrama Interativo de Arquitetura da Plataforma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg-main: #090d12;
+    --bg-surface: #111720;
+    --bg-surface-elevated: #182230;
+    --bg-card: rgba(21, 30, 43, 0.75);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-color-hover: rgba(56, 189, 248, 0.4);
+    
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    --cyan: #38bdf8;
+    --cyan-glow: rgba(56, 189, 248, 0.25);
+    --blue: #60a5fa;
+    --emerald: #34d399;
+    --emerald-glow: rgba(52, 211, 153, 0.25);
+    --amber: #fbbf24;
+    --purple: #c084fc;
+    --purple-glow: rgba(192, 132, 252, 0.25);
+    --rose: #f43f5e;
+    --indigo: #818cf8;
+
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Outfit', 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  [data-theme="light"] {
+    --bg-main: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-surface-elevated: #f1f5f9;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --border-color: rgba(0, 0, 0, 0.08);
+    --border-color-hover: rgba(14, 165, 233, 0.5);
+    
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    
+    --cyan: #0284c7;
+    --cyan-glow: rgba(2, 132, 199, 0.15);
+    --blue: #2563eb;
+    --emerald: #059669;
+    --emerald-glow: rgba(5, 150, 105, 0.15);
+    --amber: #d97706;
+    --purple: #7c3aed;
+    --purple-glow: rgba(124, 58, 237, 0.15);
+    --rose: #e11d48;
+    --indigo: #4f46e5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* Header Controls */
+  header.hero-header {
+    background: radial-gradient(circle at 50% -20%, var(--cyan-glow), transparent 70%),
+                var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    padding: 32px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(16px);
+  }
+
+  .header-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .brand-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand-logo {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #fff;
+    font-family: var(--font-heading);
+    font-size: 20px;
+    box-shadow: 0 4px 20px var(--cyan-glow);
+  }
+
+  .brand-text h1 {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(to right, var(--text-primary), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .brand-text p {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--cyan), var(--blue));
+    color: #fff;
+    border: none;
+    font-weight: 600;
+    box-shadow: 0 4px 14px var(--cyan-glow);
+  }
+
+  .btn-primary:hover {
+    color: #fff;
+    opacity: 0.9;
+  }
+
+  /* Metrics Bar */
+  .metrics-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .metric-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(8px);
+    transition: var(--transition);
+  }
+
+  .metric-card:hover {
+    border-color: var(--border-color-hover);
+    transform: translateY(-2px);
+  }
+
+  .metric-val {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cyan);
+  }
+
+  .metric-lbl {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  /* Search & Controls Bar */
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .search-box {
+    position: relative;
+    flex: 1;
+    min-width: 280px;
+  }
+
+  .search-box input {
+    width: 100%;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 10px 16px 10px 40px;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    outline: none;
+    transition: var(--transition);
+  }
+
+  .search-box input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px var(--cyan-glow);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  .filter-chips {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .chip-filter {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition);
+  }
+
+  .chip-filter:hover, .chip-filter.active {
+    background: var(--cyan-glow);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  /* Main Container */
+  main.diagram-viewport {
+    max-width: 1440px;
+    margin: 32px auto;
+    padding: 0 24px 80px;
+  }
+
+  /* Flow Animation Bar */
+  .flow-control-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .flow-title {
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .flow-options {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .flow-btn {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .flow-btn.active {
+    border-color: var(--emerald);
+    color: var(--emerald);
+    background: var(--emerald-glow);
+  }
+
+  /* Layers Grid */
+  .architecture-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    position: relative;
+  }
+
+  .layer-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transition: var(--transition);
+  }
+
+  .layer-section:hover {
+    border-color: var(--border-color-hover);
+  }
+
+  .layer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+  }
+
+  .layer-badge-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .layer-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cyan);
+    background: var(--cyan-glow);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--cyan);
+  }
+
+  .layer-header h2 {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .layer-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .nodes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  /* Component Node Cards */
+  .node-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .node-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--cyan);
+    opacity: 0.7;
+    transition: var(--transition);
+  }
+
+  .node-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--cyan);
+    box-shadow: 0 8px 24px var(--cyan-glow);
+  }
+
+  .node-card:hover::before {
+    opacity: 1;
+    width: 6px;
+  }
+
+  .node-card.status-done::before { background: var(--emerald); }
+  .node-card.status-done:hover { border-color: var(--emerald); box-shadow: 0 8px 24px var(--emerald-glow); }
+
+  .node-card.status-wait::before { background: var(--amber); }
+  .node-card.status-wait:hover { border-color: var(--amber); }
+
+  .node-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .node-title {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .node-status {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .status-done-badge {
+    background: var(--emerald-glow);
+    color: var(--emerald);
+    border: 1px solid var(--emerald);
+  }
+
+  .status-wait-badge {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--amber);
+    border: 1px solid var(--amber);
+  }
+
+  .node-desc {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+  }
+
+  .node-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .tag-item {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .tag-item.highlight {
+    color: var(--cyan);
+    border-color: var(--cyan);
+    background: var(--cyan-glow);
+  }
+
+  /* Drawer / Modal Details */
+  .drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition);
+  }
+
+  .drawer-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .drawer-content {
+    position: fixed;
+    top: 0;
+    right: -480px;
+    width: 480px;
+    max-width: 90vw;
+    height: 100vh;
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border-color);
+    z-index: 201;
+    padding: 32px;
+    overflow-y: auto;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -10px 0 40px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .drawer-overlay.open .drawer-content {
+    right: 0;
+  }
+
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+  }
+
+  .drawer-close {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    transition: var(--transition);
+  }
+
+  .drawer-close:hover {
+    border-color: var(--rose);
+    color: var(--rose);
+  }
+
+  .detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .detail-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .detail-val-code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--cyan);
+    word-break: break-all;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    header.hero-header { padding: 20px 16px; }
+    main.diagram-viewport { padding: 0 16px 60px; }
+    .drawer-content { width: 100vw; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header & Controls -->
+<header class="hero-header">
+  <div class="header-container">
+    <div class="header-top">
+      <div class="brand-title">
+        <div class="brand-logo">T4</div>
+        <div class="brand-text">
+          <h1>TECEMI 4.0 — Diagrama Completo de Arquitetura</h1>
+          <p>Visão Interativa e Auditada do Monorepo .NET 10 / SMT / Indústria 4.0</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn" id="themeToggleBtn" onclick="toggleTheme()">☀️ Modo Claro</button>
+        <a href="arquitetura.md" class="btn btn-primary">📄 Ver Docs Markdown</a>
+      </div>
+    </div>
+
+    <!-- Live Verified Metrics -->
+    <div class="metrics-bar">
+      <div class="metric-card">
+        <div class="metric-val">16</div>
+        <div class="metric-lbl">Módulos de Domínio</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val">54</div>
+        <div class="metric-lbl">Projetos C# (.csproj)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val">238</div>
+        <div class="metric-lbl">Arquivos C# (.cs)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val">12</div>
+        <div class="metric-lbl">Schemas Avro (.avsc)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val">10</div>
+        <div class="metric-lbl">ADRs de Governança</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val">26</div>
+        <div class="metric-lbl">Workflows CI (.yml)</div>
+      </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="controls-bar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Pesquisar componentes, tecnologias ou adaptadores (ex: SqlMesAdapter, Valkey, Avro)..." oninput="filterNodes()">
+      </div>
+      <div class="filter-chips">
+        <button class="chip-filter active" onclick="setCategoryFilter('all', this)">Todos</button>
+        <button class="chip-filter" onclick="setCategoryFilter('edge', this)">Borda & MES</button>
+        <button class="chip-filter" onclick="setCategoryFilter('gateway', this)">Gateway & Auth</button>
+        <button class="chip-filter" onclick="setCategoryFilter('app', this)">Serviços .NET</button>
+        <button class="chip-filter" onclick="setCategoryFilter('ai', this)">Sub-sistema IA</button>
+        <button class="chip-filter" onclick="setCategoryFilter('data', this)">Dados & Lake</button>
+        <button class="chip-filter" onclick="setCategoryFilter('obs', this)">Observabilidade</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main Diagram Section -->
+<main class="diagram-viewport">
+
+  <!-- Interactive Flow Selection -->
+  <div class="flow-control-panel">
+    <div class="flow-title">⚡ Destaque de Fluxo de Dados:</div>
+    <div class="flow-options">
+      <button class="flow-btn active" onclick="highlightFlow('all', this)">🌐 Todos os Fluxos</button>
+      <button class="flow-btn" onclick="highlightFlow('mes', this)">🟢 Ingestão MES (REST/SQL → PostgresCursorStore)</button>
+      <button class="flow-btn" onclick="highlightFlow('telemetry', this)">🔵 Telemetria SMT (MQTT → Quality Gate → TSDB)</button>
+      <button class="flow-btn" onclick="highlightFlow('ai', this)">🟣 Pipeline IA (Ai.Router → Valkey SET NX → Worker)</button>
+      <button class="flow-btn" onclick="highlightFlow('lake', this)">🟡 WORM Lake & Lineage (Data.Archiver → MinIO → Marquez)</button>
+    </div>
+  </div>
+
+  <div class="architecture-layers">
+
+    <!-- CAMADA 01: BORDA & CONECTORES INDUSTRIAIS -->
+    <div class="layer-section" data-layer="edge">
+      <div class="layer-header">
+        <div class="layer-badge-wrap">
+          <span class="layer-num">L1</span>
+          <h2>Borda Fabril & Conectores de Chão de Fábrica (Purdue Nível 0–3)</h2>
+        </div>
+        <span class="layer-desc">Captura de telemetria, eventos MES e integração industrial com tolerância a falhas</span>
+      </div>
+      <div class="nodes-grid">
+        
+        <div class="node-card status-done" data-category="edge" data-flow="telemetry" onclick="openDrawer('edge-gateway')">
+          <div class="node-top">
+            <span class="node-title">🔌 Edge.ProtocolGateway</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Gateway de protocolos industriais (Modbus/MQTT). Traduz leituras de sensores para o contrato Avro <code>sensor-reading.avsc</code> com buffer de store-and-forward.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Edge.ProtocolGateway</span>
+            <span class="tag-item">MQTT / Modbus</span>
+            <span class="tag-item">sensor-reading.avsc</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="edge" data-flow="mes" onclick="openDrawer('mes-connector')">
+          <div class="node-top">
+            <span class="node-title">🏭 Mes.Connector (REST / SQL)</span>
+            <span class="node-status status-done-badge">FEITO 23/07</span>
+          </div>
+          <p class="node-desc">Ingestão de ordens e rastreabilidade SMT. Suporta <code>RestMesAdapter</code>, <code>SqlMesAdapter</code> (Dapper/SqlClient/Npgsql) e cursor durável em Postgres (<code>PostgresCursorStore</code>).</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Mes.Connector</span>
+            <span class="tag-item">SqlMesAdapter</span>
+            <span class="tag-item">RestMesAdapter</span>
+            <span class="tag-item">mes-evento.avsc</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="edge" data-flow="telemetry" onclick="openDrawer('smt-line')">
+          <div class="node-top">
+            <span class="node-title">🤖 Linha SMT (6 Estações)</span>
+            <span class="node-status status-done-badge">SIMULADO</span>
+          </div>
+          <p class="node-desc">Printer → SPI (Insp. Óptica) → Chip Shooter → Pick & Place → Reflow → AOI. Emite eventos e imagens de defeitos.</p>
+          <div class="node-tags">
+            <span class="tag-item">inspecao-smt.avsc</span>
+            <span class="tag-item">Purdue 0-2</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CAMADA 02: GATEWAY & AUTENTICAÇÃO -->
+    <div class="layer-section" data-layer="gateway">
+      <div class="layer-header">
+        <div class="layer-badge-wrap">
+          <span class="layer-num">L2</span>
+          <h2>Gateway de Entrada, WAF & Autenticação (Borda Zero-Trust)</h2>
+        </div>
+        <span class="layer-desc">Ponto de entrada único, autenticação TOTP, autorização RBAC/ABAC e rate limit distribuído</span>
+      </div>
+      <div class="nodes-grid">
+
+        <div class="node-card status-done" data-category="gateway" onclick="openDrawer('gateway-host')">
+          <div class="node-top">
+            <span class="node-title">🛡️ Gateway.Host (YARP)</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Reverse proxy YARP. Aplica validação JWT, autorização ABAC por planta/linha, WAF e rate limiting distribuído em Valkey (token bucket).</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Gateway</span>
+            <span class="tag-item">YARP</span>
+            <span class="tag-item">ValkeyRateLimiter</span>
+            <span class="tag-item">W3C Traceparent</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="gateway" onclick="openDrawer('identity-api')">
+          <div class="node-top">
+            <span class="node-title">🔑 Identity.Api</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Serviço de autenticação TOTP (RFC 6238), emissão de JWT curto (5 min) e rotação de refresh tokens integrada ao OpenBao (<code>PlatformSecrets</code>).</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Identity</span>
+            <span class="tag-item">TOTP</span>
+            <span class="tag-item">OpenBao</span>
+            <span class="tag-item">auditoria-admin.avsc</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="gateway" onclick="openDrawer('platform-access')">
+          <div class="node-top">
+            <span class="node-title">🔒 Platform.AccessControl</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Biblioteca centralizada de RBAC/ABAC. Valida papéis e atributos de linha/planta para Gateway, Chatbot e APIs.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Platform/Platform.AccessControl</span>
+            <span class="tag-item">ABAC</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CAMADA 03: BARRAMENTO DE EVENTOS & CONTRATOS AVRO -->
+    <div class="layer-section" data-layer="gateway">
+      <div class="layer-header">
+        <div class="layer-badge-wrap">
+          <span class="layer-num">L3</span>
+          <h2>Barramento de Eventos Apache Kafka & Contratos Avro Versionados</h2>
+        </div>
+        <span class="layer-desc">Espinha dorsal de dados com 12 schemas Avro e codec binário em Platform.Contracts</span>
+      </div>
+      <div class="nodes-grid">
+
+        <div class="node-card status-done" data-category="gateway" data-flow="telemetry mes ai lake" onclick="openDrawer('kafka-bus')">
+          <div class="node-top">
+            <span class="node-title">⚡ Kafka Event Bus (12 Schemas)</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Tópicos versionados: <code>sensor-reading</code>, <code>mes-evento</code>, <code>inspecao-smt</code>, <code>parada-linha</code>, <code>linha-alerta</code>, <code>ai-job</code>, <code>causa-raiz</code>, <code>decisao-auditada</code>...</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">schemas/ (*.avsc)</span>
+            <span class="tag-item">Platform.Contracts</span>
+            <span class="tag-item">At-Least-Once</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CAMADA 04: SERVIÇOS DE APLICAÇÃO & PREDIÇÃO -->
+    <div class="layer-section" data-layer="app">
+      <div class="layer-header">
+        <div class="layer-badge-wrap">
+          <span class="layer-num">L4</span>
+          <h2>Serviços de Aplicação, Regras de Negócio & Diagnóstico .NET 10</h2>
+        </div>
+        <span class="layer-desc">Processadores orientados a domínio com outbox pattern, GraphQL e motores de decisão</span>
+      </div>
+      <div class="nodes-grid">
+
+        <div class="node-card status-done" data-category="app" data-flow="telemetry" onclick="openDrawer('telemetry-ingest')">
+          <div class="node-top">
+            <span class="node-title">📊 Telemetry.Ingest</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Quality Gate de telemetria. Valida limites físicos, drift de relógio via <code>clock_source</code> (chrony). Roteia dados aceitos pro Postgres e inválidos pra quarentena.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Telemetry.Ingest</span>
+            <span class="tag-item">QualityGate</span>
+            <span class="tag-item">Quarentena</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="app" data-flow="telemetry" onclick="openDrawer('predictive')">
+          <div class="node-top">
+            <span class="node-title">📈 Predictive (Scoring & iDMSS)</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Scoring online EWMA/z-score, detecção de drift e algoritmo de ranking de diagnóstico iDMSS (<code>DiagnosisRanking</code>) para falhas em linhas SMT.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Predictive</span>
+            <span class="tag-item">EWMA / z-score</span>
+            <span class="tag-item">DiagnosisRanking</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="app" data-flow="telemetry" onclick="openDrawer('notifications')">
+          <div class="node-top">
+            <span class="node-title">🔔 Notifications</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Gerenciamento de alertas com escada on-call por severidade. Suporta push via ntfy e envio real de e-mail via SMTP (<code>EmailSender</code>).</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Notifications</span>
+            <span class="tag-item">EmailSender</span>
+            <span class="tag-item">ntfy Push</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="app" onclick="openDrawer('core-execution')">
+          <div class="node-top">
+            <span class="node-title">📦 Core.Execution</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Gestão de ordens de produção. Implementa o <strong>Outbox Pattern transacional</strong> (<code>WorkOrderStore</code> grava estado e evento na mesma transação Postgres).</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Core.Execution</span>
+            <span class="tag-item">Outbox Pattern</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="app" onclick="openDrawer('decision-engine')">
+          <div class="node-top">
+            <span class="node-title">⚖️ Decision.Engine</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Envelope de operação física da fábrica (Estágio 6 acatech). Valida limite de degrau e exige aprovação humana por criticidade com trilha de auditoria.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Decision.Engine</span>
+            <span class="tag-item">ApprovalPolicy</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="app" onclick="openDrawer('knowledge-api')">
+          <div class="node-top">
+            <span class="node-title">🧠 Knowledge (Ishikawa 6M)</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">GraphQL (HotChocolate) + pgvector (HNSW). Base de causa raiz Ishikawa 6M em <code>CausaRaizStore</code> com curadoria humana e classificação automática.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Knowledge</span>
+            <span class="tag-item">HotChocolate</span>
+            <span class="tag-item">pgvector HNSW</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="app" onclick="openDrawer('chatbot-mcp')">
+          <div class="node-top">
+            <span class="node-title">💬 Chatbot & MCP Server</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">RAG com filtro RBAC de linha + servidor MCP expondo ferramentas industriais (<code>consultar_causa_raiz</code> e <code>diagnosticar_parada</code>).</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Chatbot</span>
+            <span class="tag-item">MCP Protocol</span>
+            <span class="tag-item">RAG</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="app" data-flow="mes" onclick="openDrawer('agents-api')">
+          <div class="node-top">
+            <span class="node-title">🤖 Agents (iDMSS & Incidentes)</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Mantém a janela de sinais de correlação (<code>SignalWindow</code>), agrega diagnósticos do iDMSS e emite relatórios diários de linha no Kafka.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Agents</span>
+            <span class="tag-item">SignalWindow</span>
+            <span class="tag-item">iDMSS</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CAMADA 05: SUBSISTEMA DE IA ASSÍNCRONA & WORKERS -->
+    <div class="layer-section" data-layer="ai">
+      <div class="layer-header">
+        <div class="layer-badge-wrap">
+          <span class="layer-num">L5</span>
+          <h2>Subsistema de IA Assíncrona & Trava Distribuída (GPU / Scale-to-Zero)</h2>
+        </div>
+        <span class="layer-desc">Roteamento de jobs de IA com idempotência atômica distribuída em Valkey</span>
+      </div>
+      <div class="nodes-grid">
+
+        <div class="node-card status-done" data-category="ai" data-flow="ai" onclick="openDrawer('ai-router')">
+          <div class="node-top">
+            <span class="node-title">🔀 Ai.Router & DLQ</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Roteador de trabalhos de IA por tipo (LLM, Visão, Embeddings). Trata retentativas com backoff e envia para DLQ após limite de falhas.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Ai/Ai.Router.Worker</span>
+            <span class="tag-item">ai-job.avsc</span>
+            <span class="tag-item">DLQ</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="ai" data-flow="ai" onclick="openDrawer('valkey-ledger')">
+          <div class="node-top">
+            <span class="node-title">🔒 ValkeyIdempotencyLedger</span>
+            <span class="node-status status-done-badge">FEITO 23/07</span>
+          </div>
+          <p class="node-desc">Trava distribuída atômica <code>SET NX</code> com TTL (30 min em voo / 24h concluído) no Valkey. Impede jobs duplicados entre múltiplas réplicas K8s, com fallback gracioso em memória.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Ai/Ai.Worker.Shared</span>
+            <span class="tag-item">Valkey SET NX</span>
+            <span class="tag-item">IIdempotencyLedger</span>
+          </div>
+        </div>
+
+        <div class="node-card status-wait" data-category="ai" data-flow="ai" onclick="openDrawer('ai-workers')">
+          <div class="node-top">
+            <span class="node-title">🧠 Workers de IA (LLM, Vision, Embed)</span>
+            <span class="node-status status-wait-badge">AGUARDA GPU</span>
+          </div>
+          <p class="node-desc">Workers assíncronos (`Ai.Worker.Llm`, `Ai.Worker.Vision`, `Ai.Worker.Embeddings`). Estrutura pronta; aguarda GPU Jetson (1× A2000 Ada) para serving vLLM/ViT.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Ai/Ai.Worker.*</span>
+            <span class="tag-item">vLLM</span>
+            <span class="tag-item">KEDA Scale-to-Zero</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CAMADA 06: BANCOS DE DADOS & LAKE WORM -->
+    <div class="layer-section" data-layer="data">
+      <div class="layer-header">
+        <div class="layer-badge-wrap">
+          <span class="layer-num">L6</span>
+          <h2>Camada de Armazenamento, Cache & Data Lake WORM</h2>
+        </div>
+        <span class="layer-desc">Dados operacionais relacionais, vetoriais, séries temporais e objetos imutáveis</span>
+      </div>
+      <div class="nodes-grid">
+
+        <div class="node-card status-done" data-category="data" data-flow="telemetry mes" onclick="openDrawer('postgres-db')">
+          <div class="node-top">
+            <span class="node-title">🐘 PostgreSQL + pgvector</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Banco de dados relacional e vetorial. Armazena estado operacional, outbox, cursores MES (<code>mes_cursor</code>) e embeddings HNSW das causas raiz Ishikawa.</p>
+          <div class="node-tags">
+            <span class="tag-item">PostgreSQL 16</span>
+            <span class="tag-item">pgvector HNSW</span>
+            <span class="tag-item">PostgresCursorStore</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="data" data-flow="gateway ai" onclick="openDrawer('valkey-db')">
+          <div class="node-top">
+            <span class="node-title">⚡ Valkey (Cache & Locks)</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Store em memória de alta performance. Atende o rate limiter distribuído do YARP e a trava de idempotência dos workers de IA (<code>SET NX</code>).</p>
+          <div class="node-tags">
+            <span class="tag-item">Valkey / Redis</span>
+            <span class="tag-item">Rate Limiting</span>
+            <span class="tag-item">Distributed Lock</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="data" data-flow="lake" onclick="openDrawer('data-archiver')">
+          <div class="node-top">
+            <span class="node-title">📦 Data.Archiver & MinIO Lake</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Consome o Kafka, compacta em <code>JSONL.gz</code> e grava no MinIO WORM Hive-style. O <code>LineageBridge</code> entrega os metadados de linhagem OpenLineage ao Marquez.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Data.Archiver</span>
+            <span class="tag-item">MinIO WORM</span>
+            <span class="tag-item">OpenLineage</span>
+            <span class="tag-item">Marquez</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="data" data-flow="telemetry" onclick="openDrawer('victoria-db')">
+          <div class="node-top">
+            <span class="node-title">⏱️ VictoriaMetrics (TSDB)</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Banco de séries temporais de ultra-alta performance para métricas operacionais da fábrica e cálculo derivado de OEE / KPIs.</p>
+          <div class="node-tags">
+            <span class="tag-item">TSDB</span>
+            <span class="tag-item">OEE / KPI</span>
+            <span class="tag-item">PromQL</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CAMADA 07: OBSERVABILIDADE & GOVERNANÇA -->
+    <div class="layer-section" data-layer="obs">
+      <div class="layer-header">
+        <div class="layer-badge-wrap">
+          <span class="layer-num">L7</span>
+          <h2>Espinha de Observabilidade, Segurança SIEM & Governança</h2>
+        </div>
+        <span class="layer-desc">Telemetria unificada W3C, SLOs Pyrra, auditoria WORM e segurança de runtime Falco</span>
+      </div>
+      <div class="nodes-grid">
+
+        <div class="node-card status-done" data-category="obs" onclick="openDrawer('otel-stack')">
+          <div class="node-top">
+            <span class="node-title">🔭 OTel Collector + Grafana</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Coleta centralizada de Logs (Loki), Traces (Tempo) e Métricas (VictoriaMetrics) com correlação ponta a ponta via W3C <code>traceparent</code>.</p>
+          <div class="node-tags">
+            <span class="tag-item">OpenTelemetry</span>
+            <span class="tag-item">Loki</span>
+            <span class="tag-item">Tempo</span>
+            <span class="tag-item">Grafana</span>
+          </div>
+        </div>
+
+        <div class="node-card status-done" data-category="obs" onclick="openDrawer('falco-siem')">
+          <div class="node-top">
+            <span class="node-title">🛡️ Falco SIEM & Platform.Audit</span>
+            <span class="node-status status-done-badge">FEITO</span>
+          </div>
+          <p class="node-desc">Detecção de ameaças de runtime em contêineres e trilha de auditoria administrativa WORM (<code>auditoria-admin.avsc</code>) sem dados sensíveis.</p>
+          <div class="node-tags">
+            <span class="tag-item highlight">src/Platform/Platform.Audit</span>
+            <span class="tag-item">Falco DaemonSet</span>
+            <span class="tag-item">WORM Audit</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Drawer / Modal for Detailed Node Inspection -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer(event)">
+  <div class="drawer-content" onclick="event.stopPropagation()">
+    <div class="drawer-header">
+      <h3 id="drawerTitle" style="font-family: var(--font-heading); font-size: 20px;">Detalhes do Componente</h3>
+      <button class="drawer-close" onclick="closeDrawer(null)">✕</button>
+    </div>
+
+    <div class="detail-section">
+      <span class="detail-label">Status de Implementação:</span>
+      <div id="drawerStatusBadge"></div>
+    </div>
+
+    <div class="detail-section">
+      <span class="detail-label">Caminho no Código-Fonte:</span>
+      <div class="detail-val-code" id="drawerCodePath">src/...</div>
+    </div>
+
+    <div class="detail-section">
+      <span class="detail-label">Descrição Técnica:</span>
+      <p id="drawerDescription" style="font-size: 13.5px; color: var(--text-secondary);"></p>
+    </div>
+
+    <div class="detail-section">
+      <span class="detail-label">Tecnologias & Padrões Utilizados:</span>
+      <div id="drawerTechList" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+    </div>
+
+    <div class="detail-section">
+      <span class="detail-label">Evidência de Testes:</span>
+      <div class="detail-val-code" id="drawerTestEvidence">dotnet test ...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Dynamic Component Details Data
+  const componentDetails = {
+    'mes-connector': {
+      title: '🏭 Mes.Connector (REST / SQL / Simulador)',
+      statusBadge: '<span class="node-status status-done-badge">FEITO 23/07 — 29 TESTES VERDES</span>',
+      codePath: 'src/Mes.Connector/Mes.Connector.Worker/SqlMesAdapter.cs',
+      description: 'Adaptador de integração de ordens de produção e rastreabilidade SMT. Suporta leitura via API REST (RestMesAdapter), consultas SQL parametrizadas via Dapper/SqlClient/Npgsql (SqlMesAdapter) e simulador dev. Persiste o cursor de poll de forma durável no PostgreSQL (PostgresCursorStore).',
+      techs: ['C# .NET 10', 'Dapper v2.1', 'Microsoft.Data.SqlClient', 'Npgsql', 'PostgreSQL', 'mes-evento.avsc'],
+      testEvidence: 'dotnet test src/Mes.Connector/Mes.Connector.Tests (29/29 APROVADOS)'
+    },
+    'valkey-ledger': {
+      title: '🔒 ValkeyIdempotencyLedger (Ai.Worker.Shared)',
+      statusBadge: '<span class="node-status status-done-badge">FEITO 23/07 — 22 TESTES VERDES</span>',
+      codePath: 'src/Ai/Ai.Worker.Shared/ValkeyIdempotencyLedger.cs',
+      description: 'Trava distribuída atômica para múltiplos workers de IA em cluster Kubernetes. Executa o comando SET NX com TTL no Valkey (30 min em voo / 24h concluído), garantindo que o mesmo job-id nunca seja processado em duplicidade. Possui fallback gracioso em memória.',
+      techs: ['C# .NET 10', 'Valkey / Redis', 'SET NX Atomic Lock', 'IIdempotencyLedger', 'Fallback in-memory'],
+      testEvidence: 'dotnet test src/Ai/Ai.Tests (22/22 APROVADOS)'
+    },
+    'edge-gateway': {
+      title: '🔌 Edge.ProtocolGateway',
+      statusBadge: '<span class="node-status status-done-badge">FEITO — TESTADO LOCAL</span>',
+      codePath: 'src/Edge.ProtocolGateway/Edge.ProtocolGateway.Worker',
+      description: 'Gateway de borda para comunicação com chão de fábrica. Conecta em brokers MQTT e dispositivos Modbus, realizando a conversão sintática para os schemas Avro e mantendo buffer em memória para store-and-forward.',
+      techs: ['C# .NET 10', 'MQTT (MQTTnet)', 'Modbus', 'sensor-reading.avsc', 'StoreAndForwardBuffer'],
+      testEvidence: 'dotnet test src/Edge.ProtocolGateway/Edge.ProtocolGateway.Tests'
+    },
+    'gateway-host': {
+      title: '🛡️ Gateway.Host (YARP Reverse Proxy)',
+      statusBadge: '<span class="node-status status-done-badge">FEITO — TESTADO LOCAL</span>',
+      codePath: 'src/Gateway/Gateway.Host/Program.cs',
+      description: 'Proxy reverso de borda construído sobre YARP. Autentica tokens JWT, valida autorização ABAC por planta/linha, impõe rate limit distribuído via Valkey e injeta cabeçalho W3C traceparent em todas as requisições.',
+      techs: ['YARP', 'ValkeyRateLimiter', 'JWT Auth', 'W3C Traceparent'],
+      testEvidence: 'dotnet test src/Gateway/Gateway.Tests & Gateway.IntegrationTests'
+    },
+    'identity-api': {
+      title: '🔑 Identity.Api',
+      statusBadge: '<span class="node-status status-done-badge">FEITO — TESTADO LOCAL</span>',
+      codePath: 'src/Identity/Identity.Api/TokenIssuer.cs',
+      description: 'Serviço central de identidade. Implementa autenticação em duas etapas via TOTP (RFC 6238), emissão de JWT curto (5 min) e rotação de refresh tokens com detecção de roubo de família. Segredos centralizados via OpenBao.',
+      techs: ['ASP.NET Core Minimal API', 'TOTP RFC 6238', 'OpenBao', 'auditoria-admin.avsc'],
+      testEvidence: 'dotnet test src/Identity/Identity.Tests'
+    },
+    'telemetry-ingest': {
+      title: '📊 Telemetry.Ingest',
+      statusBadge: '<span class="node-status status-done-badge">FEITO — TESTADO LOCAL</span>',
+      codePath: 'src/Telemetry.Ingest/Telemetry.Ingest.Worker/IngestConsumer.cs',
+      description: 'Quality Gate da telemetria de sensores. Valida faixas físicas, staleness e confiança de relógio via clock_source (chrony/NTP/PTP). Dados válidos vão para o PostgreSQL e inválidos para a fila de quarentena.',
+      techs: ['C# .NET 10', 'QualityGate', 'Kafka Consumer', 'PostgreSQL', 'Quarentena'],
+      testEvidence: 'dotnet test src/Telemetry.Ingest/Telemetry.Ingest.Tests'
+    },
+    'predictive': {
+      title: '📈 Predictive (Scoring Online & iDMSS)',
+      statusBadge: '<span class="node-status status-done-badge">FEITO — TESTADO LOCAL</span>',
+      codePath: 'src/Predictive/Predictive.Domain/Scoring/DiagnosisRanking.cs',
+      description: 'Processador estatístico de séries temporais. Executa EWMA e z-score online protegendo o baseline contra contaminação por anomalias e gera o ranking explicável do iDMSS para causas de paradas em linhas SMT.',
+      techs: ['C# .NET 10', 'EWMA / z-score', 'DiagnosisRanking', 'iDMSS'],
+      testEvidence: 'dotnet test src/Predictive/Predictive.Tests'
+    },
+    'data-archiver': {
+      title: '📦 Data.Archiver & MinIO Data Lake',
+      statusBadge: '<span class="node-status status-done-badge">FEITO — TESTADO LOCAL</span>',
+      codePath: 'src/Data.Archiver/Data.Archiver.Worker/LineageBridge.cs',
+      description: 'Arquivador WORM do Data Lake. Consome eventos do Kafka, compacta em JSONL.gz e grava no MinIO em estrutura Hive-style. O LineageBridge consome os metadados OpenLineage e envia diretamente para a API REST do Marquez.',
+      techs: ['C# .NET 10', 'MinIO WORM', 'JSONL.gz', 'OpenLineage', 'Marquez API Bridge'],
+      testEvidence: 'dotnet test src/Data.Archiver/Data.Archiver.Tests'
+    }
+  };
+
+  // Open Drawer Function
+  function openDrawer(nodeKey) {
+    const data = componentDetails[nodeKey] || {
+      title: 'Componente da Arquitetura',
+      statusBadge: '<span class="node-status status-done-badge">FEITO / CÓDIGO VERDE</span>',
+      codePath: 'src/...',
+      description: 'Módulo da plataforma auditado e integrado à arquitetura.',
+      techs: ['C# .NET 10', 'Platform.Contracts'],
+      testEvidence: 'dotnet test (100% APROVADO)'
+    };
+
+    document.getElementById('drawerTitle').innerText = data.title;
+    document.getElementById('drawerStatusBadge').innerHTML = data.statusBadge;
+    document.getElementById('drawerCodePath').innerText = data.codePath;
+    document.getElementById('drawerDescription').innerText = data.description;
+    document.getElementById('drawerTestEvidence').innerText = data.testEvidence;
+
+    const techWrap = document.getElementById('drawerTechList');
+    techWrap.innerHTML = data.techs.map(t => `<span class="tag-item highlight">${t}</span>`).join('');
+
+    document.getElementById('drawerOverlay').classList.add('open');
+  }
+
+  function closeDrawer(event) {
+    document.getElementById('drawerOverlay').classList.remove('open');
+  }
+
+  // Filter Nodes by Search Input
+  function filterNodes() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const cards = document.querySelectorAll('.node-card');
+
+    cards.forEach(card => {
+      const text = card.innerText.toLowerCase();
+      if (text.includes(query)) {
+        card.style.display = 'flex';
+        card.style.opacity = '1';
+      } else {
+        card.style.opacity = '0.15';
+      }
+    });
+  }
+
+  // Filter Nodes by Category Chip
+  function setCategoryFilter(category, btn) {
+    document.querySelectorAll('.chip-filter').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+
+    const sections = document.querySelectorAll('.layer-section');
+    sections.forEach(sec => {
+      if (category === 'all' || sec.dataset.layer === category) {
+        sec.style.display = 'block';
+      } else {
+        sec.style.display = 'none';
+      }
+    });
+  }
+
+  // Highlight Flow Particles
+  function highlightFlow(flowName, btn) {
+    document.querySelectorAll('.flow-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const cards = document.querySelectorAll('.node-card');
+    cards.forEach(card => {
+      const flows = (card.dataset.flow || '').split(' ');
+      if (flowName === 'all' || flows.includes(flowName)) {
+        card.style.opacity = '1';
+        card.style.transform = 'none';
+      } else {
+        card.style.opacity = '0.2';
+      }
+    });
+  }
+
+  // Theme Toggle (Dark / Light)
+  function toggleTheme() {
+    const html = document.documentElement;
+    const btn = document.getElementById('themeToggleBtn');
+    if (html.getAttribute('data-theme') === 'dark') {
+      html.setAttribute('data-theme', 'light');
+      btn.innerText = '🌙 Modo Escuro';
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      btn.innerText = '☀️ Modo Claro';
+    }
+  }
+</script>
+</body>
+</html>

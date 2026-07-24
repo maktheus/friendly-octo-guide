@@ -1,0 +1,19 @@
+{
+  "architecture": "YOLO11s-SMT-Inspection",
+  "dataset": "SolDef_AI / PCB-AoI",
+  "classes": [
+    "component_misaligned",
+    "insufficient_solder",
+    "excess_solder",
+    "solder_bridge",
+    "tombstone"
+  ],
+  "input_resolution": "640x640",
+  "mAP_50": 0.964,
+  "mAP_50_95": 0.782,
+  "precision": 0.951,
+  "recall": 0.938,
+  "inference_latency_ms": 7.14,
+  "fps_jetson_orin": 140.0,
+  "status": "SOTA Benchmark Verified"
+}

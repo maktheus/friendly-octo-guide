@@ -102,10 +102,10 @@
   Análise feita sobre o clone em <code>E:\UFAM\jabil\friendly-octo-guide</code>, commit <code>9223571</code> (17/07/2026).
   Serve a 3 propostas de mestrado (iDMSS/Victor, visão SPI/Hallyson, inferência lógica/Jeymerson) + épicos de infraestrutura.</p>
   <div class="kpis">
-    <div class="kpi"><b>16</b><span>serviços em src/</span></div>
-    <div class="kpi"><b>179</b><span>arquivos C#</span></div>
-    <div class="kpi"><b>54</b><span>commits (jun–jul/26)</span></div>
-    <div class="kpi"><b>11</b><span>schemas Avro</span></div>
+    <div class="kpi"><b>54</b><span>projetos .NET (16 módulos)</span></div>
+    <div class="kpi"><b>238</b><span>arquivos C#</span></div>
+    <div class="kpi"><b>12</b><span>schemas Avro</span></div>
+    <div class="kpi"><b>10</b><span>ADRs de governança</span></div>
     <div class="kpi"><b>26</b><span>workflows de CI</span></div>
     <div class="kpi"><b>4</b><span>pessoas no time</span></div>
   </div>
@@ -165,8 +165,8 @@
 <tr><td><code>Notifications</code></td><td>Escada on-call, push ntfy</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Desserialização de enum quebra com o payload do Predictive (ver §4)</td></tr>
 <tr><td><code>Decision.Engine</code></td><td>Envelope físico + aprovação por criticidade</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Domínio elegante e pequeno; envelopes hardcoded ("PoC do loop")</td></tr>
 <tr><td><code>Chatbot</code> / <code>Knowledge</code> / <code>Agents</code></td><td>RAG + GraphQL + MCP + agentes</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Embeddings são <code>HashingEmbedder</code> (sem semântica real); janela de sinais em memória</td></tr>
-<tr><td><code>Ai.*</code> (router + 3 workers)</td><td>Fila de jobs LLM/visão/embeddings, DLQ, retry</td><td><span class="badge b-wait">BLOQUEADO</span></td><td>Estrutura pronta; serving real aguarda GPU (Jetson); ledger de idempotência em memória</td></tr>
-<tr><td><code>Mes.Connector</code></td><td>Poll MES → normaliza → <code>mes.eventos.v1</code></td><td><span class="badge b-code">SÓ COMPILA</span></td><td>Só existe <code>SimulatorMesAdapter</code>; cursor em memória; falta no docker-compose</td></tr>
+<tr><td><code>Ai.*</code> (router + 3 workers)</td><td>Fila de jobs LLM/visão/embeddings, DLQ, retry</td><td><span class="badge b-wait">BLOQUEADO</span></td><td>Estrutura pronta; serving real aguarda GPU (Jetson); idempotência distribuída Valkey SET NX (`ValkeyIdempotencyLedger`)</td></tr>
+<tr><td><code>Mes.Connector</code></td><td>Poll MES → normaliza → <code>mes.eventos.v1</code></td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Adaptadores REST (`RestMesAdapter`), SQL (`SqlMesAdapter` via Dapper/SqlClient/Npgsql) e Simulador; cursor durável Postgres (`PostgresCursorStore`)</td></tr>
 <tr><td><code>Data.Archiver</code></td><td>Kafka → JSONL.gz → MinIO + OpenLineage</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Linhagem publicada no Kafka mas sem bridge → Marquez (elo solto)</td></tr>
 <tr><td><code>Platform.*</code></td><td>Contracts (Avro), AccessControl, ServiceDefaults, Audit</td><td><span class="badge b-ok">RODOU LOCAL</span></td><td>Base compartilhada bem feita; codec executável dos schemas</td></tr>
 <tr><td><code>clients/</code> (PWA, desktop, mobile, obs)</td><td>PWA estática + shells Tauri</td><td><span class="badge b-code">MISTO</span></td><td>PWA ok; mobile aguarda Android SDK; PWA tenta WebSocket que não existe</td></tr>
@@ -297,9 +297,9 @@ Caixas tracejadas vermelhas = elos quebrados hoje.</p>
 <h2>3 · Épicos SMT/SMD — o que a pesquisa precisa <span class="tag">issues #6–#11</span></h2>
 <p class="lead">O plano de retomada documentado: #7 → #8 → #9 → #10 → #11. Repare no padrão: <b>tudo que é pesquisa de verdade está bloqueado por dado externo.</b></p>
 <div class="epic-row">
-  <div class="epic-chip done"><b>#6 Conector MES ✓</b><small>domínio pronto · falta adapter real + cursor persistente</small></div>
+  <div class="epic-chip done"><b>#6 Conector MES ✓</b><small>FEITO 23/07: REST, SQL (Dapper) e cursor durável Postgres</small></div>
   <div class="epic-chip done"><b>#7 Ishikawa 6M ✓</b><small>classificador + seed · falta persistência pgvector + MCP</small></div>
-  <div class="epic-chip done"><b>#8 iDMSS ranking ✓</b><small>ranking baseline · Random Forest = peso 1.0 (não existe)</small></div>
+  <div class="epic-chip done"><b>#8 iDMSS ranking ✓</b><small>ranking baseline + idempotência IA distribuída Valkey SET NX</small></div>
   <div class="epic-chip blocked"><b>#9 Visão SPI ✗</b><small>bloqueado: dataset rotulado + GPU + modelo</small></div>
   <div class="epic-chip blocked"><b>#10 Inferência lógica ✗</b><small>bloqueado: elicitação de regras com a operação</small></div>
   <div class="epic-chip blocked"><b>#11 Treino/MLflow ✗</b><small>bloqueado: dataset + necessidade de re-treino</small></div>
@@ -392,7 +392,7 @@ Caixas tracejadas vermelhas = elos quebrados hoje.</p>
   <h4>Cinco pontos onde a garantia anunciada morre com o processo</h4>
   <p>① <b>Refresh tokens</b> em memória: restart do Identity desloga todo mundo e a "revogação de família" não vale entre réplicas.
   ② <b>Buffer store-and-forward</b> da borda em memória: a única razão de existir desse buffer é sobreviver a queda — e ele não sobrevive.
-  ③ <b>Cursor MES</b>: restart re-polla tudo. ④ <b>Ledger de idempotência da IA</b>: por réplica, então com 2+ réplicas a idempotência simplesmente não existe.
+  ③ <b>Cursor MES</b>: **FEITO** (persistido via `PostgresCursorStore`). ④ <b>Ledger de idempotência da IA</b>: **FEITO 23/07** (`ValkeyIdempotencyLedger` via `SET NX` + TTL com fallback em memória).
   ⑤ <b>Rate limiter local</b>: por réplica; o limite real vira N× o configurado.
   Tudo está documentado como "fase 1" — o problema é que os diagramas e a tabela de status vendem essas garantias como presentes (<span class="badge b-ok">OK LOCAL</span>) sem o asterisco.</p>
   <p class="where">TokenIssuer.cs · StoreAndForwardBuffer.cs · MesConnectorWorker.cs · IdempotencyLedger.cs · TokenBucket/ValkeyRateLimiter</p>

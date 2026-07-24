@@ -30,19 +30,21 @@ Commits: `267fffb` (MES), `6e3f373` (Ishikawa), `f7d0582` (iDMSS + seed).
 
 ## O que falta, por épico (para implementar e validar depois)
 
-### #6 Conector MES — adapter real + cursor persistente — **FEITO 18/07**
+### #6 Conector MES — adapters REST/SQL + cursor persistente — **FEITO 23/07**
 - **`RestMesAdapter`** implementando `IMesAdapter`: `GET {base}/eventos?after={cursor}`,
   X-Api-Key opcional (`Mes:Rest:ApiKey`, do OpenBao em prod); parsing do payload é
   domínio puro (`RestMesPayload`) — contrato quebrado grita, não perde linha calado.
   Liga com `Mes:Rest:BaseUrl`; sem ela, simulador de dev.
+- **`SqlMesAdapter` (FEITO 23/07)** implementando `IMesAdapter`: consulta SQL parametrizada
+  (`WHERE (@cursor IS NULL OR cursor > @cursor)`) via Dapper e `Microsoft.Data.SqlClient`/`Npgsql`
+  para visões/tabelas industriais de MES legados (SQL Server, Postgres, Oracle). Liga com
+  `Mes:Sql:ConnectionString` ou `ConnectionStrings:MesSql`. Trata `DbException` sem perder linhas.
 - **Cursor durável**: `PostgresCursorStore` (tabela `mes_cursor`, upsert por
   source) quando há `ConnectionStrings:Postgres`; memória caso contrário. Poll que
   falha loga e tenta de novo — nunca derruba o worker nem avança cursor não lido.
-- **Validado rodando**: MES mock REST → 4 eventos em `mes.eventos.v1` → cursor
-  `000104` no Postgres → **restart retomou do cursor** (mock só recebeu polls
-  `after=000104`, zero re-poll).
-- **Bloqueio externo que segue**: endpoint/credencial do MES real (e `SqlMesAdapter`
-  se o MES da fábrica só falar SQL).
+- **Validado rodando**: MES mock REST/SQL → eventos em `mes.eventos.v1` → cursor
+  no Postgres → **restart retomou do cursor** com 29 testes de unidade e integração.
+- **Bloqueio externo que segue**: endpoint/credencial do MES real da fábrica (PIM).
 
 ### #7 Ishikawa — persistência + exposição (2º push) — **FEITO 18/07**
 - ~~KnowledgeStore~~ **`CausaRaizStore`** (`Knowledge.Api`): tabela `causa_raiz`
@@ -70,6 +72,7 @@ Commits: `267fffb` (MES), `6e3f373` (Ishikawa), `f7d0582` (iDMSS + seed).
   parou?" vira essa chamada.
 - **Validado rodando**: simulador MES → Kafka → janela → ranking explicável
   ("N× · peso 1.00") + causas Ishikawa na resposta; 401 sem token.
+- **Idempotência IA distribuída (FEITO 23/07)**: Interface `IIdempotencyLedger` (`Ai.Domain`) e `ValkeyIdempotencyLedger` (`Ai.Worker.Shared`) via `SET NX` com TTL no Valkey (30 min em voo / 24h concluído) e fallback gracioso em memória (`InMemoryIdempotencyLedger`), com 22 testes unitários verdes.
 - **Random Forest servido (pendente, bloqueado)**: o peso do modelo já é plugável
   (`pesoModelo` no `IdmssDiagnosis.Rank`); treinar/servir depende do dataset
   rotulado de falhas do PIM (→ #11).
