@@ -7,7 +7,7 @@ namespace Gateway.Domain;
 /// </summary>
 public sealed class TokenBucket
 {
-    private readonly Lock _lock = new();
+    private readonly object _lock = new();
     private readonly double _capacity;
     private readonly double _refillPerSecond;
     private double _tokens;
