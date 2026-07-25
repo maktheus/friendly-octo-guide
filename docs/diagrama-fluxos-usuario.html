@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluxos de Usuário (User Flows) — TECEMI 4.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg-dark: #090d16;
+    --card-bg: rgba(15, 23, 42, 0.75);
+    --border: rgba(255, 255, 255, 0.1);
+    --accent-blue: #38bdf8;
+    --accent-purple: #a855f7;
+    --accent-green: #22c55e;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --text-light: #f8fafc;
+    --text-muted: #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    line-height: 1.6;
+    padding: 30px 20px;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #38bdf8, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  header p {
+    color: var(--text-muted);
+    font-size: 14px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  /* Persona Selector Tabs */
+  .persona-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 35px;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  .tab-btn.active {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(168, 85, 247, 0.2));
+    border-color: var(--accent-blue);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.2);
+  }
+
+  /* Persona Content Card */
+  .flow-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(16px);
+    border-radius: 20px;
+    padding: 35px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    display: none;
+    animation: fadeIn 0.4s ease-in-out forwards;
+  }
+
+  .flow-card.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 15px;
+  }
+
+  .badge-op { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+  .badge-eng { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+  .badge-man { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+  .badge-ger { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+  .badge-adm { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+
+  .persona-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  .persona-desc {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 30px;
+    max-width: 850px;
+  }
+
+  /* Timeline Steps */
+  .timeline {
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 35px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 5px;
+    bottom: 5px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--accent-blue), var(--accent-purple));
+  }
+
+  .step-item {
+    position: relative;
+    margin-bottom: 24px;
+  }
+
+  .step-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .step-dot {
+    position: absolute;
+    left: -30px;
+    top: 3px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #0f172a;
+    border: 2px solid var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--accent-blue);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+  }
+
+  .step-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .step-body {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 6px;
+  }
+
+  /* Matrix Table */
+  .matrix-section {
+    margin-top: 50px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 30px;
+  }
+
+  .matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 15px;
+  }
+
+  .matrix-table th, .matrix-table td {
+    padding: 12px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: center;
+  }
+
+  .matrix-table th {
+    background: rgba(255, 255, 255, 0.05);
+    color: #f1f5f9;
+    font-weight: 700;
+  }
+
+  .matrix-table td.feature {
+    text-align: left;
+    font-weight: 600;
+    color: #e2e8f0;
+  }
+
+  .pill-full { background: rgba(34, 197, 94, 0.2); color: #4ade80; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; }
+  .pill-read { background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; }
+  .pill-none { background: rgba(255, 255, 255, 0.05); color: #64748b; padding: 4px 8px; border-radius: 6px; font-size: 11px; }
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <h1>Mapeamento de Fluxos de Usuário — TECEMI 4.0</h1>
+    <p>Experiência interativa de fluxo de trabalho para todas as 5 personas da plataforma na linha de montagem industrial SMT.</p>
+  </header>
+
+  <!-- Persona Tabs -->
+  <div class="persona-tabs">
+    <button class="tab-btn active" onclick="showPersona('op')">
+      <span>🛠️</span> Operador SMT
+    </button>
+    <button class="tab-btn" onclick="showPersona('eng')">
+      <span>🔬</span> Eng. de Processo
+    </button>
+    <button class="tab-btn" onclick="showPersona('man')">
+      <span>⚡</span> Eng. Preditiva
+    </button>
+    <button class="tab-btn" onclick="showPersona('ger')">
+      <span>📈</span> Gerente de Fábrica
+    </button>
+    <button class="tab-btn" onclick="showPersona('adm')">
+      <span>🛡️</span> Admin TI / SecOps
+    </button>
+  </div>
+
+  <!-- TAB 1: OPERADOR SMT -->
+  <div id="op" class="flow-card active">
+    <span class="card-header-badge badge-op">Chão de Fábrica & Operação de Linha</span>
+    <h2 class="persona-title">1. Operador da Linha SMT (Produção & Inspeção)</h2>
+    <p class="persona-desc">
+      Acompanha o fluxo contínuo das máquinas SPI (pasta de solda), Pick-and-Place e AOI (inspeção óptica). Exige interface sem atrito, respostas rápidas (<15ms) e alertas visuais de confirmação de descarte de placas com falha de soldagem.
+    </p>
+
+    <div class="timeline">
+      <div class="step-item">
+        <div class="step-dot">1</div>
+        <div class="step-title">Autenticação Rápida IHM</div>
+        <div class="step-body">O operador aproxima a matrícula / insere o código TOTP no terminal da máquina SMT. O YARP Gateway valida as credenciais e renderiza a IHM com baixa latência.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">2</div>
+        <div class="step-title">Recebimento de Alerta SPI / AOI em Tempo Real</div>
+        <div class="step-body">O trabalhador <code>Ai.Worker.Vision</code> processa a imagem da placa #PCB-8891 no modelo YOLO11s e dispara um alerta de "Falta de Solda no C12" com mAP de 96.4%.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">3</div>
+        <div class="step-title">Visualização Anotada & Inspeção Visual</div>
+        <div class="step-body">O operador visualiza a foto em alta resolução com a caixa delimitadora (bounding box) destacando o componente C12 e a métrica de confiança da IA.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">4</div>
+        <div class="step-title">Decisão do Operador & Registro no MES</div>
+        <div class="step-body">Se for falha real: Clica em "Confirmar Refugo" -> O <code>Mes.Connector</code> dispara evento SQL Dapper para registrar o descarte no MES legado.<br>Se for falso positivo: Clica em "Descartar Alerta" -> Registra o feedback para re-treinamento da IA.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: ENGENHEIRO DE PROCESSO -->
+  <div id="eng" class="flow-card">
+    <span class="card-header-badge badge-eng">Análise Causal & Qualidade 6M</span>
+    <h2 class="persona-title">2. Engenheiro de Processo & Qualidade</h2>
+    <p class="persona-desc">
+      Investiga picos recorrentes de defeitos de soldagem, executa buscas semânticas em vetores pgvector por relatórios de não conformidade (RNCs) anteriores e avalia regras dedutivas Ishikawa 6M com explicabilidade auditável (XAI).
+    </p>
+
+    <div class="timeline">
+      <div class="step-item">
+        <div class="step-dot">1</div>
+        <div class="step-title">Identificação de Desvio de Qualidade</div>
+        <div class="step-body">O portal sinaliza um desvio estatístico de "Ponte de Solda" (Bridging) acima da média na linha 02.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">2</div>
+        <div class="step-title">Consulta ao Assistente de IA / Chatbot MCP</div>
+        <div class="step-body">O engenheiro pergunta via linguagem natural no Chatbot: "Quais as causas raízes para ponte de solda no lote de hoje na insersora 02?".</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">3</div>
+        <div class="step-title">Busca Vetorial pgvector & Motor Ishikawa 6M</div>
+        <div class="step-body">O <code>Knowledge.Api</code> executa busca por similaridade HNSW no <code>pgvector</code> e invoca o <code>IshikawaRuleEngine.cs</code> via GraphQL <code>avaliarRegrasIshikawa</code>.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">4</div>
+        <div class="step-title">Árvore de Explicação (XAI) & Plano de Ação</div>
+        <div class="step-body">O sistema apresenta a causa raiz identificada (Método: Pressão excessiva no Squeegee + Material: Viscosidade baixa). O engenheiro aprova a Ação Corretiva e gera o RNC formal.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: ENGENHEIRO DE MANUTENÇÃO PREDITIVA -->
+  <div id="man" class="flow-card">
+    <span class="card-header-badge badge-man">Preditiva & Saúde de Ativos</span>
+    <h2 class="persona-title">3. Engenheiro de Manutenção Preditiva</h2>
+    <p class="persona-desc">
+      Monitora o desgaste dos motores de insersoras, curva de temperatura do forno de reflow e sinais de telemetria para programar intervenções antes de falhas catastróficas.
+    </p>
+
+    <div class="timeline">
+      <div class="step-item">
+        <div class="step-dot">1</div>
+        <div class="step-title">Ingestão de Sinais & Execução Idempotente</div>
+        <div class="step-body">O <code>ValkeyIdempotencyLedger</code> garante execução única do job preditivo via trava distribuída (<code>SET NX</code> com TTL).</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">2</div>
+        <div class="step-title">Detecção de Anomalia Preditiva (iDMSS)</div>
+        <div class="step-body">O modelo Gradient Boosting + SMOTE indica 85% de probabilidade de quebra no Motor 3 da Insersora em 4 horas (falha de aquecimento/torque).</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">3</div>
+        <div class="step-title">Alerta de Alta Prioridade & Análise de Tendência</div>
+        <div class="step-body">O engenheiro acessa o gráfico de série temporal de telemetria dos sensores e confirma o padrão de fadiga mecânica.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">4</div>
+        <div class="step-title">Abertura de OS Preventiva</div>
+        <div class="step-body">Agenda a manutenção preventiva para o horário de troca de turno, reservando as peças necessárias no sistema sem paralisar a produção.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: GERENTE DE FÁBRICA -->
+  <div id="ger" class="flow-card">
+    <span class="card-header-badge badge-ger">Visão Estratégica & Métricas OEE</span>
+    <h2 class="persona-title">4. Gerente de Fábrica / Diretor de Operações</h2>
+    <p class="persona-desc">
+      Consome visões consolidadas do OEE (Eficiência Global do Equipamento), rendimento de primeira passagem (FPY - First Pass Yield) e relatórios executivos de ROI e produtividade.
+    </p>
+
+    <div class="timeline">
+      <div class="step-item">
+        <div class="step-dot">1</div>
+        <div class="step-title">Acesso ao Dashboard Executivo</div>
+        <div class="step-body">Login via Single Sign-On corporativo com perfil RBAC Executivo, renderizando visões agregadas de todas as linhas SMT da planta.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">2</div>
+        <div class="step-title">Filtros & Análise Temporal de Parquet</div>
+        <div class="step-body">O <code>Data.Archiver</code> consolida bilhões de eventos históricos em arquivos Parquet de leitura ultrarrápida, exibindo o OEE mensal.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">3</div>
+        <div class="step-title">Avaliação do Impacto das Soluções de IA</div>
+        <div class="step-body">Visualiza a redução de 30% nos falsos alarmes de AOI e a economia financeira proporcionada pela prevenção de quebras do iDMSS.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">4</div>
+        <div class="step-title">Exportação de Relatório Institucional</div>
+        <div class="step-body">Exporta o relatório gerencial formatado em PDF/HTML para reuniões de diretoria e auditoria FUEA/UFAM.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: ADMIN TI / DEVOPS -->
+  <div id="adm" class="flow-card">
+    <span class="card-header-badge badge-adm">Infraestrutura, Segurança & SecOps</span>
+    <h2 class="persona-title">5. Administrador de TI / Engenheiro DevOps & SecOps</h2>
+    <p class="persona-desc">
+      Garante a saúde dos 16 microsserviços C#, rotação de segredos no OpenBao, monitoramento OpenTelemetry via .NET Aspire e sincronização resiliente do Conector MES.
+    </p>
+
+    <div class="timeline">
+      <div class="step-item">
+        <div class="step-dot">1</div>
+        <div class="step-title">Monitoramento de Saúde no Aspire / OTel</div>
+        <div class="step-body">Acompanha métricas em tempo real dos 54 projetos C#, verificando latências do YARP Gateway (<15ms) e saúde do Valkey/Postgres.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">2</div>
+        <div class="step-title">Gestão de Segredos & Rotação OpenBao</div>
+        <div class="step-body">Gerencia segredos industriais no `PlatformSecrets`, aplicando renovação automática de chaves JWT (5 min) e tokens TOTP.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-dot">3</div>
+        <div class="step-title">Auditoria do Conector MES Dual</div>
+        <div class="step-body">Verifica a integridade do `PostgresCursorStore` para garantir zero perda de mensagens nos adaptadores REST e SQL Dapper.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATRIX SECTION -->
+  <div class="matrix-section">
+    <h3 style="font-family:'Outfit', sans-serif; font-size:20px; font-weight:700; color:#38bdf8; margin-bottom:8px">📊 Matriz de Permissões & Acessos por Persona</h3>
+    <p style="font-size:13px; color:var(--text-muted)">Detalhamento do nível de controle de acesso (RBAC/ABAC) aplicado no YARP API Gateway.</p>
+
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th style="text-align:left">Módulo / Funcionalidade</th>
+          <th>Operador SMT</th>
+          <th>Eng. Processo</th>
+          <th>Eng. Preditiva</th>
+          <th>Gerente Fábrica</th>
+          <th>Admin TI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="feature">Inspeção Óptica SPI/AOI em Tempo Real</td>
+          <td><span class="pill-full">TOTAL</span></td>
+          <td><span class="pill-read">LEITURA</span></td>
+          <td><span class="pill-none">N/A</span></td>
+          <td><span class="pill-none">N/A</span></td>
+          <td><span class="pill-read">MONITOR</span></td>
+        </tr>
+        <tr>
+          <td class="feature">Análise Causal & Regras Ishikawa 6M</td>
+          <td><span class="pill-none">N/A</span></td>
+          <td><span class="pill-full">TOTAL</span></td>
+          <td><span class="pill-read">LEITURA</span></td>
+          <td><span class="pill-read">RESUMO</span></td>
+          <td><span class="pill-none">N/A</span></td>
+        </tr>
+        <tr>
+          <td class="feature">Assistente de IA & Chatbot MCP</td>
+          <td><span class="pill-read">CONSULTA</span></td>
+          <td><span class="pill-full">TOTAL</span></td>
+          <td><span class="pill-full">TOTAL</span></td>
+          <td><span class="pill-read">CONSULTA</span></td>
+          <td><span class="pill-read">MONITOR</span></td>
+        </tr>
+        <tr>
+          <td class="feature">Diagnósticos Preditivos iDMSS</td>
+          <td><span class="pill-none">N/A</span></td>
+          <td><span class="pill-read">LEITURA</span></td>
+          <td><span class="pill-full">TOTAL</span></td>
+          <td><span class="pill-read">RESUMO</span></td>
+          <td><span class="pill-none">N/A</span></td>
+        </tr>
+        <tr>
+          <td class="feature">Dashboard Executivo (OEE / FPY)</td>
+          <td><span class="pill-none">N/A</span></td>
+          <td><span class="pill-read">LEITURA</span></td>
+          <td><span class="pill-read">LEITURA</span></td>
+          <td><span class="pill-full">TOTAL</span></td>
+          <td><span class="pill-read">MONITOR</span></td>
+        </tr>
+        <tr>
+          <td class="feature">Gestão de Segredos & Gateway YARP</td>
+          <td><span class="pill-none">N/A</span></td>
+          <td><span class="pill-none">N/A</span></td>
+          <td><span class="pill-none">N/A</span></td>
+          <td><span class="pill-none">N/A</span></td>
+          <td><span class="pill-full">TOTAL</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+  function showPersona(id) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.flow-card').forEach(card => card.classList.remove('active'));
+    
+    event.currentTarget.classList.add('active');
+    document.getElementById(id).classList.add('active');
+  }
+</script>
+
+</body>
+</html>
