@@ -29,7 +29,7 @@
     background-color: var(--bg-dark);
     color: var(--text-light);
     line-height: 1.6;
-    padding: 30px 20px;
+    padding: 20px;
     background-image: 
       radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
       radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
@@ -40,9 +40,64 @@
     margin: 0 auto;
   }
 
+  /* Navigation Bar across HTML portals */
+  .top-nav {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    border-radius: 14px;
+    padding: 12px 24px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .nav-brand {
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+  }
+
+  .nav-link:hover {
+    color: #fff;
+    background: rgba(56, 189, 248, 0.15);
+    border-color: var(--accent-blue);
+  }
+
+  .nav-link.active {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(168, 85, 247, 0.25));
+    border-color: var(--accent-blue);
+  }
+
   header {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 35px;
   }
 
   header h1 {
@@ -259,11 +314,72 @@
   .pill-read { background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; }
   .pill-none { background: rgba(255, 255, 255, 0.05); color: #64748b; padding: 4px 8px; border-radius: 6px; font-size: 11px; }
 
+  /* Direct Quick Links Section */
+  .quick-links-card {
+    margin-top: 40px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .quick-links-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-blue);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+  }
+
+  .quick-link-btn {
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #f1f5f9;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+  }
+
+  .quick-link-btn:hover {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    transform: translateY(-2px);
+  }
+
 </style>
 </head>
 <body>
 
 <div class="container">
+
+  <!-- TOP NAV BAR WITH DIRECT ACCESS LINKS -->
+  <nav class="top-nav">
+    <div class="nav-brand">
+      🚀 TECEMI 4.0 — Portal de Recursos
+    </div>
+    <div class="nav-links">
+      <a href="diagrama-fluxos-usuario.html" class="nav-link active">👥 Fluxos de Usuário</a>
+      <a href="diagrama-arquitetura.html" class="nav-link">📊 Arquitetura em Camadas</a>
+      <a href="diagrama-conexoes-visual.html" class="nav-link">🔌 Grafo de Conexões</a>
+      <a href="relatorio-julho-2026.html" class="nav-link">📄 Relatório Julho/2026</a>
+    </div>
+  </nav>
 
   <header>
     <h1>Mapeamento de Fluxos de Usuário — TECEMI 4.0</h1>
@@ -511,6 +627,29 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- DIRECT ACCESS QUICK LINKS CARD -->
+  <div class="quick-links-card">
+    <div class="quick-links-title">🔗 Links de Acesso Rápido a Todos os Portais e Documentos</div>
+    <div class="links-grid">
+      <a href="relatorio-julho-2026.html" class="quick-link-btn">
+        <span>📄 Relatório Mensal Julho/2026</span>
+        <span>➔</span>
+      </a>
+      <a href="diagrama-arquitetura.html" class="quick-link-btn">
+        <span>📊 Diagrama de Arquitetura</span>
+        <span>➔</span>
+      </a>
+      <a href="diagrama-conexoes-visual.html" class="quick-link-btn">
+        <span>🔌 Grafo de Conexões e Portas</span>
+        <span>➔</span>
+      </a>
+      <a href="fluxos-de-usuario-tecemi.md" class="quick-link-btn">
+        <span>📘 Documento de Fluxos (Markdown)</span>
+        <span>➔</span>
+      </a>
+    </div>
   </div>
 
 </div>
